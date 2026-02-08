@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="DataList.cpp" />
     <ClCompile Include="FontAtlas.cpp" />
     <ClCompile Include="glad.c" />
