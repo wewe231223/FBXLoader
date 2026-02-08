@@ -237,7 +237,11 @@ namespace {
     void BuildMaterialTextures(const std::vector<asset::Material>& Materials, std::vector<asset::Texture2D>& MaterialTextures) {
         MaterialTextures.clear();
         MaterialTextures.resize(Materials.size());
+#ifndef _DEBUG
+		const Fs::path TextureRoot{ Fs::current_path() / "images" };
+#else 
         const Fs::path TextureRoot{ Fs::current_path() / "Asset" / "images" };
+#endif 
         for (std::size_t Index{ 0 }; Index < Materials.size(); ++Index) {
             std::optional<std::string> TextureName{ FindMaterialTextureName(Materials[Index]) };
             if (!TextureName.has_value()) {
@@ -374,6 +378,7 @@ namespace {
 }
 
 int main(int ArgCount, char** ArgValues) {
+#ifndef _DEBUG
     if (ArgCount > 1) {
         const std::string ListPath{ ArgValues[1] };
         const std::vector<std::string> Entries{ LoadListEntries(ListPath) };
@@ -404,6 +409,37 @@ int main(int ArgCount, char** ArgValues) {
             }
         }
     }
+#else 
+    const std::string ListPath{ "Asset/list.txt" };
+    const std::vector<std::string> Entries{ LoadListEntries(ListPath) };
+    if (Entries.empty()) {
+        std::cout << "No entries found in list file: " << ListPath << "\n";
+    }
+    const Fs::path BaseDir{ Fs::path{ ListPath }.parent_path() };
+    for (std::size_t Index{ 0 }; Index < Entries.size(); ++Index) {
+        Fs::path FbxPath{ Entries[Index] };
+        if (FbxPath.is_relative()) {
+            FbxPath = BaseDir / FbxPath;
+        }
+        if (!Fs::exists(FbxPath)) {
+            std::cout << "Missing FBX file: " << FbxPath.string() << "\n";
+            continue;
+        }
+        const std::string Extension{ FbxPath.extension().string() };
+        if (Extension != ".fbx" && Extension != ".FBX") {
+            std::cout << "Skipping non-FBX entry: " << FbxPath.string() << "\n";
+            continue;
+        }
+        const Fs::path BinaryPath{ MakeBinaryPath(FbxPath) };
+        if (ConvertFbxToBinary(FbxPath, BinaryPath)) {
+            std::cout << "Binary saved: " << BinaryPath.string() << "\n";
+        }
+        else {
+            std::cout << "Binary save failed: " << BinaryPath.string() << "\n";
+        }
+    }
+#endif 
+
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         return 1;

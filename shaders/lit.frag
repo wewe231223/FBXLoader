@@ -19,7 +19,7 @@ uniform float uShininess;
 void main()
 {
     // 1. 빛의 강도 상수 설정 (원하는 밝기에 따라 2.0 ~ 5.0 사이로 조절해보세요)
-    const float LIGHT_INTENSITY = 3.0; 
+    const float LIGHT_INTENSITY = 2.0; 
     vec3 effectiveLightColor = uLightColor * LIGHT_INTENSITY;
 
     vec3 albedo = texture(uAlbedo, fs_in.UV).rgb * fs_in.Color.rgb;
