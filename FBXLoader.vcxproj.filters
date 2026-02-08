@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ufbx.c">
+      <Filter>ufbx</Filter>
+    </ClCompile>
+    <ClCompile Include="glad.c">
+      <Filter>gl</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="MeshHierarchyBuilder.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="UfbxAssetLoader.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="DataList.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelResult.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="FontAtlas.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ufbx">
+      <UniqueIdentifier>{083c149d-5b0d-4638-8003-f25c28dfd95b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gl">
+      <UniqueIdentifier>{1ba66c63-070e-4c7d-a171-b82226d27645}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Loader">
+      <UniqueIdentifier>{af7f1f52-4deb-4fcc-81dd-39c7e1768a29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="viewer">
+      <UniqueIdentifier>{a83fe988-ad08-46a4-a22b-38d97ffb2d97}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ufbx.h">
+      <Filter>ufbx</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="DataList.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshHierarchyBuilder.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelResult.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneVisitor.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="UfbxAssetLoader.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="FontAtlas.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
+      <Filter>viewer</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
