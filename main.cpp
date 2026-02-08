@@ -1,7 +1,8 @@
-#include <iostream>
-#include <vector>
-#include <string>
+#include <array>
 #include <filesystem>
+#include <iostream>
+#include <string>
+#include <vector>
 
 #include <glad/glad.h>
 
@@ -15,358 +16,271 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Common.h"
-#include "Timer.h"
-#include "Input.h"
 #include "Camera.h"
-#include "Shader.h"
-#include "Texture.h"
+#include "Common.h"
+#include "FontAtlas.h"
+#include "Input.h"
+#include "MeshHierarchyBuilder.h"
 #include "Model.h"
 #include "Renderer.h"
-
-#include "UfbxAssetLoader.h"
-#include "MeshHierarchyBuilder.h"
-#include "FontAtlas.h"
+#include "Shader.h"
 #include "TextRenderer.h"
+#include "Texture.h"
+#include "Timer.h"
+#include "UfbxAssetLoader.h"
 
+namespace Fs = std::filesystem;
 
-namespace fs = std::filesystem;
+namespace {
+    constexpr int WindowWidth{ 1280 };
+    constexpr int WindowHeight{ 720 };
 
-namespace
-{
-    constexpr int WindowWidth = 1280;
-    constexpr int WindowHeight = 720;
-
-    asset::Model CreateAxisModel()
-    {
-        // --- Parameters (tweak as you like) ---
-        constexpr float AxisLength = 2000.0f;  // axis line extends to +/- this value
-        constexpr float TickInterval = 1.0f;   // tick spacing
-        constexpr float TickSize = 0.05f;  // half-length of each tick segment
-
-        // We'll build a GL_LINES model:
-        // - 3 main axis lines (+/-X, +/-Y, +/-Z)
-        // - tick marks every 1.0 unit (excluding origin) on each axis
-        std::vector<asset::Vertex> v;
-        std::vector<uint32_t> i;
-
-        v.reserve(6 + static_cast<size_t>((AxisLength * 2.0f / TickInterval) * 3.0f * 2.0f));
-        i.reserve(6 + static_cast<size_t>((AxisLength * 2.0f / TickInterval) * 3.0f * 2.0f));
-
-        auto make = [](const glm::vec3& p, const glm::vec4& c) -> asset::Vertex
-            {
-                asset::Vertex vx{};
-                vx.Position = p;
-                vx.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
-                vx.TexCoord = glm::vec2(0.0f);
-                vx.Color = c;
-                return vx;
-            };
-
-        auto addLine = [&](const glm::vec3& a, const glm::vec3& b, const glm::vec4& c0, const glm::vec4& c1)
-            {
-                const uint32_t base = static_cast<uint32_t>(v.size());
-                v.push_back(make(a, c0));
-                v.push_back(make(b, c1));
-                i.push_back(base + 0);
-                i.push_back(base + 1);
-            };
-
-        auto addTick = [&](const glm::vec3& a, const glm::vec3& b, const glm::vec4& color)
-            {
-                const uint32_t base = static_cast<uint32_t>(v.size());
-                v.push_back(make(a, color));
-                v.push_back(make(b, color));
-                i.push_back(base + 0);
-                i.push_back(base + 1);
-            };
-
-        // --- Main axis lines ---
-        // Colors:
-        //  +X red, -X dark red
-        //  +Y green, -Y dark green
-        //  +Z blue, -Z dark blue
-        addLine(glm::vec3(-AxisLength, 0.0f, 0.0f), glm::vec3(AxisLength, 0.0f, 0.0f),
-            glm::vec4(0.5f, 0.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // X
-
-        addLine(glm::vec3(0.0f, -AxisLength, 0.0f), glm::vec3(0.0f, AxisLength, 0.0f),
-            glm::vec4(0.0f, 0.5f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)); // Y
-
-        addLine(glm::vec3(0.0f, 0.0f, -AxisLength), glm::vec3(0.0f, 0.0f, AxisLength),
-            glm::vec4(0.0f, 0.0f, 0.5f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)); // Z
-
-        // --- Tick marks every 1.0 unit (skip origin) ---
-        // X-axis ticks: short segments along Y at z=0
-        for (float x = -AxisLength; x <= AxisLength + 0.0001f; x += TickInterval)
-        {
-            if (std::abs(x) < 0.0001f)
-            {
-                continue;
-            }
-
-            addTick(glm::vec3(x, -TickSize, 0.0f),
-                glm::vec3(x, TickSize, 0.0f),
-                glm::vec4(0.7f, 0.0f, 0.0f, 1.0f));
+    void AppendVertex(asset::VertexAttributes& Vertices, const glm::vec3& Position, const glm::vec3& Normal, const std::array<glm::vec2, 4>& TexCoords, const glm::vec4& Color, const glm::vec3& Tangent, const glm::vec3& Bitangent, const glm::uvec4& BoneIndices, const glm::vec4& BoneWeights) {
+        Vertices.Positions.push_back(Position);
+        Vertices.Normals.push_back(Normal);
+        for (std::size_t Index{ 0 }; Index < Vertices.TexCoords.size(); ++Index) {
+            Vertices.TexCoords[Index].push_back(TexCoords[Index]);
         }
-
-        // Y-axis ticks: short segments along X at z=0
-        for (float y = -AxisLength; y <= AxisLength + 0.0001f; y += TickInterval)
-        {
-            if (std::abs(y) < 0.0001f)
-            {
-                continue;
-            }
-
-            addTick(glm::vec3(-TickSize, y, 0.0f),
-                glm::vec3(TickSize, y, 0.0f),
-                glm::vec4(0.0f, 0.7f, 0.0f, 1.0f));
-        }
-
-        // Z-axis ticks: short segments along Y at x=0
-        for (float z = -AxisLength; z <= AxisLength + 0.0001f; z += TickInterval)
-        {
-            if (std::abs(z) < 0.0001f)
-            {
-                continue;
-            }
-
-            addTick(glm::vec3(0.0f, -TickSize, z),
-                glm::vec3(0.0f, TickSize, z),
-                glm::vec4(0.0f, 0.0f, 0.7f, 1.0f));
-        }
-
-        asset::Model m;
-        m.Create(v, i, GL_LINES);
-        return m;
+        Vertices.Colors.push_back(Color);
+        Vertices.Tangents.push_back(Tangent);
+        Vertices.Bitangents.push_back(Bitangent);
+        Vertices.BoneIndices.push_back(BoneIndices);
+        Vertices.BoneWeights.push_back(BoneWeights);
     }
 
-    asset::Model CreateTexturedCube()
-    {
-        // A cube with positions, normals, UVs.
-        // 24 vertices (unique per-face) + 36 indices.
-        std::vector<asset::Vertex> v;
-        v.reserve(24);
+    asset::Model CreateAxisModel() {
+        constexpr float AxisLength{ 2000.0f };
+        constexpr float TickInterval{ 1.0f };
+        constexpr float TickSize{ 0.05f };
 
-        const glm::vec4 white(1.0f);
+        asset::VertexAttributes Vertices{};
+        std::vector<std::uint32_t> Indices{};
 
-        auto addFace = [&](glm::vec3 n,
-                           glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) // CCW
-        {
-            asset::Vertex a{};
-            a.Position = p0; a.Normal = n; a.TexCoord = {0.0f, 0.0f}; a.Color = white;
-            asset::Vertex b{};
-            b.Position = p1; b.Normal = n; b.TexCoord = {1.0f, 0.0f}; b.Color = white;
-            asset::Vertex c{};
-            c.Position = p2; c.Normal = n; c.TexCoord = {1.0f, 1.0f}; c.Color = white;
-            asset::Vertex d{};
-            d.Position = p3; d.Normal = n; d.TexCoord = {0.0f, 1.0f}; d.Color = white;
+        const std::size_t EstimatedTicks{ static_cast<std::size_t>((AxisLength * 2.0f / TickInterval) * 3.0f * 2.0f) };
+        Vertices.Reserve(6 + EstimatedTicks);
+        Indices.reserve(6 + EstimatedTicks);
 
-            v.push_back(a);
-            v.push_back(b);
-            v.push_back(c);
-            v.push_back(d);
+        const glm::vec3 Normal{ 0.0f, 1.0f, 0.0f };
+        const std::array<glm::vec2, 4> TexCoords{ glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
+        const glm::vec3 Tangent{ 0.0f, 0.0f, 0.0f };
+        const glm::vec3 Bitangent{ 0.0f, 0.0f, 0.0f };
+        const glm::uvec4 BoneIndices{ 0, 0, 0, 0 };
+        const glm::vec4 BoneWeights{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+        auto AddLine = [&](const glm::vec3& Start, const glm::vec3& End, const glm::vec4& StartColor, const glm::vec4& EndColor) {
+            const std::uint32_t Base{ static_cast<std::uint32_t>(Vertices.VertexCount()) };
+            AppendVertex(Vertices, Start, Normal, TexCoords, StartColor, Tangent, Bitangent, BoneIndices, BoneWeights);
+            AppendVertex(Vertices, End, Normal, TexCoords, EndColor, Tangent, Bitangent, BoneIndices, BoneWeights);
+            Indices.push_back(Base + 0);
+            Indices.push_back(Base + 1);
         };
 
-        const float s = 0.5f;
+        auto AddTick = [&](const glm::vec3& Start, const glm::vec3& End, const glm::vec4& Color) {
+            const std::uint32_t Base{ static_cast<std::uint32_t>(Vertices.VertexCount()) };
+            AppendVertex(Vertices, Start, Normal, TexCoords, Color, Tangent, Bitangent, BoneIndices, BoneWeights);
+            AppendVertex(Vertices, End, Normal, TexCoords, Color, Tangent, Bitangent, BoneIndices, BoneWeights);
+            Indices.push_back(Base + 0);
+            Indices.push_back(Base + 1);
+        };
 
-        // +Z
-        addFace({0,0,1}, {-s,-s, s}, { s,-s, s}, { s, s, s}, {-s, s, s});
-        // -Z
-        addFace({0,0,-1}, { s,-s,-s}, {-s,-s,-s}, {-s, s,-s}, { s, s,-s});
-        // +X
-        addFace({1,0,0}, { s,-s, s}, { s,-s,-s}, { s, s,-s}, { s, s, s});
-        // -X
-        addFace({-1,0,0}, {-s,-s,-s}, {-s,-s, s}, {-s, s, s}, {-s, s,-s});
-        // +Y
-        addFace({0,1,0}, {-s, s, s}, { s, s, s}, { s, s,-s}, {-s, s,-s});
-        // -Y
-        addFace({0,-1,0}, {-s,-s,-s}, { s,-s,-s}, { s,-s, s}, {-s,-s, s});
+        AddLine(glm::vec3{ -AxisLength, 0.0f, 0.0f }, glm::vec3{ AxisLength, 0.0f, 0.0f }, glm::vec4{ 0.5f, 0.0f, 0.0f, 1.0f }, glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+        AddLine(glm::vec3{ 0.0f, -AxisLength, 0.0f }, glm::vec3{ 0.0f, AxisLength, 0.0f }, glm::vec4{ 0.0f, 0.5f, 0.0f, 1.0f }, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+        AddLine(glm::vec3{ 0.0f, 0.0f, -AxisLength }, glm::vec3{ 0.0f, 0.0f, AxisLength }, glm::vec4{ 0.0f, 0.0f, 0.5f, 1.0f }, glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
 
-        std::vector<uint32_t> idx;
-        idx.reserve(36);
-        for (uint32_t f = 0; f < 6; ++f)
-        {
-            const uint32_t base = f * 4;
-            idx.push_back(base + 0);
-            idx.push_back(base + 1);
-            idx.push_back(base + 2);
-
-            idx.push_back(base + 0);
-            idx.push_back(base + 2);
-            idx.push_back(base + 3);
-        }
-
-        asset::Model m;
-        m.Create(v, idx, GL_TRIANGLES);
-        return m;
-    }
-
-    void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
-    {
-        (void)window;
-        glViewport(0, 0, width, height);
-    }
-
-
-
-    asset::ModelResult OnFileDropped(const std::string& path, std::vector<std::pair<asset::Model,const asset::ModelNode*>>& models)
-    {
-		std::filesystem::path fsPath(path);
-
-        models.clear();
-
-        asset::UfbxAssetLoader loader{ asset::GraphicsAPI::OpenGL };
-        asset::ModelResult res{}; 
-		asset::MeshHierarchyBuilder builder{ res };
-
-		asset::ISceneNodeVisitor* visitors[] = { &builder };
-
-        if (fsPath.extension() != ".fbx" and fsPath.extension() != ".FBX") {
-            std::cout << "Wrong file type - " << path << "\nOnly.fbx files are supported.\n";
-            return res; 
-        }
-
-
-        loader.LoadAndTraverse(path, { visitors });
-
-        res.ForEachDFS([&models](const asset::ModelNode& node)
-            {
-                if (node.Vertices().Empty()) {
-                    return; 
-                }
-
-
-                asset::Model model;
-                model.Create(
-                    node.Vertices().Data<asset::Vertex>(), 
-                    node.Indices().Data<uint32_t>(), 
-                    GL_TRIANGLES
-                );
-				models.emplace_back(std::move(model), &node);
+        for (float X{ -AxisLength }; X <= AxisLength + 0.0001f; X += TickInterval) {
+            if (std::abs(X) < 0.0001f) {
+                continue;
             }
-        );
 
-        std::cout << "[Drop] " << path << "\n";
-        return res; 
-    }
-
-
-    glm::mat4 ComputeWorldMatrix(const asset::ModelNode& node)
-    {
-        glm::mat4 world{ 1.0f };
-
-        std::vector<const asset::ModelNode*> chain{ node.GetChildChain() }; 
-
-        // root부터 내려오면서 누적
-        for (std::size_t i = 0; i < chain.size(); ++i)
-        {
-            const asset::ModelNode* n = chain[i];
-            world = world * n->GetNodeToParent();
-			world = world * n->GetGeometryToNode();
+            AddTick(glm::vec3{ X, -TickSize, 0.0f }, glm::vec3{ X, TickSize, 0.0f }, glm::vec4{ 0.7f, 0.0f, 0.0f, 1.0f });
         }
 
-        return world;
+        for (float Y{ -AxisLength }; Y <= AxisLength + 0.0001f; Y += TickInterval) {
+            if (std::abs(Y) < 0.0001f) {
+                continue;
+            }
+
+            AddTick(glm::vec3{ -TickSize, Y, 0.0f }, glm::vec3{ TickSize, Y, 0.0f }, glm::vec4{ 0.0f, 0.7f, 0.0f, 1.0f });
+        }
+
+        for (float Z{ -AxisLength }; Z <= AxisLength + 0.0001f; Z += TickInterval) {
+            if (std::abs(Z) < 0.0001f) {
+                continue;
+            }
+
+            AddTick(glm::vec3{ 0.0f, -TickSize, Z }, glm::vec3{ 0.0f, TickSize, Z }, glm::vec4{ 0.0f, 0.0f, 0.7f, 1.0f });
+        }
+
+        asset::Model ModelInstance{};
+        ModelInstance.Create(Vertices, Indices, GL_LINES);
+        return ModelInstance;
     }
 
-    static std::string FindSystemFontTtf()
-    {
-        namespace fs = std::filesystem;
+    asset::Model CreateTexturedCube() {
+        asset::VertexAttributes Vertices{};
+        Vertices.Reserve(24);
 
-#if defined(_WIN32)
-        const std::vector<std::string> candidates = {
+        const glm::vec4 White{ 1.0f };
+        const glm::vec3 Tangent{ 0.0f, 0.0f, 0.0f };
+        const glm::vec3 Bitangent{ 0.0f, 0.0f, 0.0f };
+        const glm::uvec4 BoneIndices{ 0, 0, 0, 0 };
+        const glm::vec4 BoneWeights{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+        auto AddFace = [&](const glm::vec3& Normal, const glm::vec3& Position0, const glm::vec3& Position1, const glm::vec3& Position2, const glm::vec3& Position3) {
+            std::array<glm::vec2, 4> TexCoords0{ glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
+            std::array<glm::vec2, 4> TexCoords1{ glm::vec2{ 1.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
+            std::array<glm::vec2, 4> TexCoords2{ glm::vec2{ 1.0f, 1.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
+            std::array<glm::vec2, 4> TexCoords3{ glm::vec2{ 0.0f, 1.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
+
+            AppendVertex(Vertices, Position0, Normal, TexCoords0, White, Tangent, Bitangent, BoneIndices, BoneWeights);
+            AppendVertex(Vertices, Position1, Normal, TexCoords1, White, Tangent, Bitangent, BoneIndices, BoneWeights);
+            AppendVertex(Vertices, Position2, Normal, TexCoords2, White, Tangent, Bitangent, BoneIndices, BoneWeights);
+            AppendVertex(Vertices, Position3, Normal, TexCoords3, White, Tangent, Bitangent, BoneIndices, BoneWeights);
+        };
+
+        const float Size{ 0.5f };
+
+        AddFace(glm::vec3{ 0.0f, 0.0f, 1.0f }, glm::vec3{ -Size, -Size, Size }, glm::vec3{ Size, -Size, Size }, glm::vec3{ Size, Size, Size }, glm::vec3{ -Size, Size, Size });
+        AddFace(glm::vec3{ 0.0f, 0.0f, -1.0f }, glm::vec3{ Size, -Size, -Size }, glm::vec3{ -Size, -Size, -Size }, glm::vec3{ -Size, Size, -Size }, glm::vec3{ Size, Size, -Size });
+        AddFace(glm::vec3{ 1.0f, 0.0f, 0.0f }, glm::vec3{ Size, -Size, Size }, glm::vec3{ Size, -Size, -Size }, glm::vec3{ Size, Size, -Size }, glm::vec3{ Size, Size, Size });
+        AddFace(glm::vec3{ -1.0f, 0.0f, 0.0f }, glm::vec3{ -Size, -Size, -Size }, glm::vec3{ -Size, -Size, Size }, glm::vec3{ -Size, Size, Size }, glm::vec3{ -Size, Size, -Size });
+        AddFace(glm::vec3{ 0.0f, 1.0f, 0.0f }, glm::vec3{ -Size, Size, Size }, glm::vec3{ Size, Size, Size }, glm::vec3{ Size, Size, -Size }, glm::vec3{ -Size, Size, -Size });
+        AddFace(glm::vec3{ 0.0f, -1.0f, 0.0f }, glm::vec3{ -Size, -Size, -Size }, glm::vec3{ Size, -Size, -Size }, glm::vec3{ Size, -Size, Size }, glm::vec3{ -Size, -Size, Size });
+
+        std::vector<std::uint32_t> Indices{};
+        Indices.reserve(36);
+        for (std::uint32_t FaceIndex{ 0 }; FaceIndex < 6; ++FaceIndex) {
+            const std::uint32_t Base{ FaceIndex * 4 };    
+            Indices.push_back(Base + 0);
+            Indices.push_back(Base + 1);
+            Indices.push_back(Base + 2);
+            Indices.push_back(Base + 0);
+            Indices.push_back(Base + 2);
+            Indices.push_back(Base + 3);
+        }
+
+        asset::Model ModelInstance{};
+        ModelInstance.Create(Vertices, Indices, GL_TRIANGLES);
+        return ModelInstance;
+    }
+
+    void FramebufferSizeCallback(GLFWwindow* WindowHandle, int Width, int Height) {
+        (void)WindowHandle;
+        glViewport(0, 0, Width, Height);
+    }
+
+    asset::ModelResult OnFileDropped(const std::string& Path, std::vector<std::pair<asset::Model, const asset::ModelNode*>>& Models) {
+        Fs::path FilePath{ Path };
+
+        Models.clear();
+
+        asset::UfbxAssetLoader Loader{ asset::GraphicsAPI::OpenGL };
+        asset::ModelResult Result{};
+        asset::MeshHierarchyBuilder Builder{ Result };
+
+        asset::ISceneNodeVisitor* Visitors[]{ &Builder };
+
+        if (FilePath.extension() != ".fbx" && FilePath.extension() != ".FBX") {
+            std::cout << "Wrong file type - " << Path << "\nOnly .fbx files are supported.\n";
+            return Result;
+        }
+
+        Loader.LoadAndTraverse(Path, { Visitors });
+
+        Result.ForEachDfs([&Models](asset::ModelNode& Node) {
+            if (Node.Vertices().Empty()) {
+                return;
+            }
+
+            asset::Model ModelInstance{};
+            ModelInstance.Create(Node.Vertices(), Node.Indices(), GL_TRIANGLES);
+            Models.emplace_back(std::move(ModelInstance), &Node);
+        });
+
+        std::cout << "[Drop] " << Path << "\n";
+        return Result;
+    }
+
+    glm::mat4 ComputeWorldMatrix(const asset::ModelNode& Node) {
+        glm::mat4 World{ 1.0f };
+
+        std::vector<const asset::ModelNode*> Chain{ Node.GetChildChain() };
+
+        for (std::size_t Index{ 0 }; Index < Chain.size(); ++Index) {
+            const asset::ModelNode* Current{ Chain[Index] };
+            World = World * Current->GetNodeToParent();
+            World = World * Current->GetGeometryToNode();
+        }
+
+        return World;
+    }
+
+    std::string FindSystemFontTtf() {
+        const std::vector<std::string> Candidates{
             "C:/Windows/Fonts/segoeui.ttf",
             "C:/Windows/Fonts/arial.ttf",
             "C:/Windows/Fonts/tahoma.ttf",
-        };
-#elif defined(__APPLE__)
-        const std::vector<std::string> candidates = {
             "/System/Library/Fonts/Supplemental/Arial.ttf",
             "/System/Library/Fonts/Supplemental/Helvetica.ttf",
             "/System/Library/Fonts/SFNS.ttf",
-        };
-#else // Linux
-        const std::vector<std::string> candidates = {
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
         };
-#endif
 
-        for (const auto& p : candidates)
-        {
-            if (fs::exists(p))
-            {
-                return p;
+        for (const std::string& Path : Candidates) {
+            if (Fs::exists(Path)) {
+                return Path;
             }
         }
         return {};
     }
 
-    static void DrawAxisTickLabels(asset::TextRenderer& tr,
-        const asset::FontAtlas& font,
-        asset::Shader& textShader,
-        const asset::Camera& camera,
-        const glm::mat4& view,
-        const glm::mat4& proj,
-        int fbw,
-        int fbh)
-    {
-        if (font.TextureId() == 0)
-        {
+    void DrawAxisTickLabels(asset::TextRenderer& TextRendererInstance, const asset::FontAtlas& Font, asset::Shader& TextShader, const asset::Camera& CameraInstance, const glm::mat4& View, const glm::mat4& Projection, int FramebufferWidth, int FramebufferHeight) {
+        if (Font.TextureId() == 0) {
             return;
         }
 
-        constexpr float AxisLength = 15.0f;
-        constexpr float TickInterval = 1.0f;
+        constexpr float AxisLength{ 15.0f };
+        constexpr float TickInterval{ 1.0f };
+        constexpr float LabelPx{ 15.0f };
+        constexpr float Offset{ 0.10f };
 
-        // 화면에서 보이는 글자 크기(픽셀 단위)
-        constexpr float LabelPx = 15.0f;
+        auto DrawOne = [&](const std::string& Label, const glm::vec3& Position, const glm::vec4& Color) {
+            TextRendererInstance.DrawTextBillboard(Font, TextShader, Label, Position, CameraInstance, View, Projection, FramebufferWidth, FramebufferHeight, LabelPx, Color, true);
+        };
 
-        // 텍스트가 눈금과 겹치지 않도록 약간 띄우기(월드 단위)
-        constexpr float Offset = 0.10f;
+        for (float X{ -AxisLength }; X <= AxisLength + 0.0001f; X += TickInterval) {
+            if (std::abs(X) < 0.0001f) {
+                continue;
+            }
 
-        auto drawOne = [&](const std::string& s, const glm::vec3& pos, const glm::vec4& color)
-            {
-                tr.DrawTextBillboard(font, textShader, s, pos,
-                    camera, view, proj, fbw, fbh,
-                    LabelPx, color,
-                    /*depthTest*/ true);
-            };
-
-        // X축: (x,0,0) 지점에 "1m" 등
-        for (float x = -AxisLength; x <= AxisLength + 0.0001f; x += TickInterval)
-        {
-            if (std::abs(x) < 0.0001f) continue;
-
-            const int v = static_cast<int>(std::round(x));
-            drawOne(std::to_string(v) + "m", glm::vec3(x, Offset, 0.0f), glm::vec4(1, 1, 1, 1));
+            const int Value{ static_cast<int>(std::round(X)) };
+            DrawOne(std::to_string(Value) + "m", glm::vec3{ X, Offset, 0.0f }, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
         }
 
-        // Y축
-        for (float y = -AxisLength; y <= AxisLength + 0.0001f; y += TickInterval)
-        {
-            if (std::abs(y) < 0.0001f) continue;
+        for (float Y{ -AxisLength }; Y <= AxisLength + 0.0001f; Y += TickInterval) {
+            if (std::abs(Y) < 0.0001f) {
+                continue;
+            }
 
-            const int v = static_cast<int>(std::round(y));
-            drawOne(std::to_string(v) + "m", glm::vec3(Offset, y, 0.0f), glm::vec4(1, 1, 1, 1));
+            const int Value{ static_cast<int>(std::round(Y)) };
+            DrawOne(std::to_string(Value) + "m", glm::vec3{ Offset, Y, 0.0f }, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
         }
 
-        // Z축
-        for (float z = -AxisLength; z <= AxisLength + 0.0001f; z += TickInterval)
-        {
-            if (std::abs(z) < 0.0001f) continue;
+        for (float Z{ -AxisLength }; Z <= AxisLength + 0.0001f; Z += TickInterval) {
+            if (std::abs(Z) < 0.0001f) {
+                continue;
+            }
 
-            const int v = static_cast<int>(std::round(z));
-            drawOne(std::to_string(v) + "m", glm::vec3(0.0f, Offset, z), glm::vec4(1, 1, 1, 1));
+            const int Value{ static_cast<int>(std::round(Z)) };
+            DrawOne(std::to_string(Value) + "m", glm::vec3{ 0.0f, Offset, Z }, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
         }
     }
-
 }
 
-int main()
-{
-    if (!glfwInit())
-    {
+int main() {
+    if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         return 1;
     }
@@ -375,21 +289,19 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(WindowWidth, WindowHeight, "OpenGL Model Viewer", nullptr, nullptr);
-    if (!window)
-    {
+    GLFWwindow* Window{ glfwCreateWindow(WindowWidth, WindowHeight, "OpenGL Model Viewer", nullptr, nullptr) };
+    if (!Window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
         return 1;
     }
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(Window);
     glfwSwapInterval(1);
 
-    glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
+    glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-    {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
         std::cerr << "Failed to initialize GLAD\n";
         glfwTerminate();
         return 1;
@@ -397,217 +309,194 @@ int main()
 
 #ifdef USE_GLEW
     glewExperimental = GL_TRUE;
-    const GLenum glewErr = glewInit();
-    if (glewErr != GLEW_OK)
-    {
-        std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(glewErr) << "\n";
+    const GLenum GlewErr{ glewInit() };
+    if (GlewErr != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(GlewErr) << "\n";
         glfwTerminate();
         return 1;
     }
 #endif
 
-    asset::Renderer renderer;
-    renderer.Initialize();
-    renderer.Resize(WindowWidth, WindowHeight);
+    asset::Renderer RendererInstance{};
+    RendererInstance.Initialize();
+    RendererInstance.Resize(WindowWidth, WindowHeight);
 
-    asset::Timer timer;
+    asset::Timer TimerInstance{};
 
-    asset::Input input(window);
-    asset::Input::InstallCallbacks(window, &input);
+    asset::Input InputHandler{ Window };
+    asset::Input::InstallCallbacks(Window, &InputHandler);
 
-    asset::Camera camera;
-    camera.SetAspect(static_cast<float>(WindowWidth) / static_cast<float>(WindowHeight));
-    camera.SetTarget(glm::vec3(0.0f));
-    camera.SetDistance(5.0f);
-    camera.SetYawPitch(glm::radians(45.0f), glm::radians(-20.0f));
+    asset::Camera CameraInstance{};
+    CameraInstance.SetAspect(static_cast<float>(WindowWidth) / static_cast<float>(WindowHeight));
+    CameraInstance.SetTarget(glm::vec3{ 0.0f, 0.0f, 0.0f });
+    CameraInstance.SetDistance(5.0f);
+    CameraInstance.SetYawPitch(glm::radians(45.0f), glm::radians(-20.0f));
 
-    asset::Shader lit;
-    asset::Shader axis;
+    asset::Shader LitShader{};
+    asset::Shader AxisShader{};
 
-    const fs::path shaderDir = fs::current_path() / "shaders";
-    if (!lit.LoadFromFiles((shaderDir / "lit.vert").string(), (shaderDir / "lit.frag").string()))
-    {
+    const Fs::path ShaderDir{ Fs::current_path() / "shaders" };
+    if (!LitShader.LoadFromFiles((ShaderDir / "lit.vert").string(), (ShaderDir / "lit.frag").string())) {
         std::cerr << "Failed to load lit shader\n";
         return 1;
     }
-    if (!axis.LoadFromFiles((shaderDir / "axis.vert").string(), (shaderDir / "axis.frag").string()))
-    {
+    if (!AxisShader.LoadFromFiles((ShaderDir / "axis.vert").string(), (ShaderDir / "axis.frag").string())) {
         std::cerr << "Failed to load axis shader\n";
         return 1;
     }
 
-    asset::FontAtlas font;
-    asset::TextRenderer textRenderer;
-    asset::Shader textShader;
+    asset::FontAtlas Font{};
+    asset::TextRenderer TextRendererInstance{};
+    asset::Shader TextShader{};
 
-    const std::string fontPath = FindSystemFontTtf();
-    if (!fontPath.empty())
-    {
-        // bakePixelHeight는 아틀라스에 구워 넣는 기준 픽셀 높이
-        if (!font.LoadFromTtfFile(fontPath, 32.0f, 512, 512, 32, 96))
-        {
-            std::cerr << "Failed to load font atlas: " << fontPath << "\n";
+    const std::string FontPath{ FindSystemFontTtf() };
+    if (!FontPath.empty()) {
+        if (!Font.LoadFromTtfFile(FontPath, 32.0f, 512, 512, 32, 96)) {
+            std::cerr << "Failed to load font atlas: " << FontPath << "\n";
         }
     }
-    else
-    {
+    else {
         std::cerr << "No system font found. Provide a .ttf.\n";
     }
 
+    std::cout << "Font path: " << FontPath << "\n";
 
-    std::cout << "Font path: " << fontPath << "\n";
+    const bool FontOk{ (!FontPath.empty()) && Font.LoadFromTtfFile(FontPath, 32.0f, 512, 512, 32, 96) };
 
-    const bool fontOk = (!fontPath.empty()) &&
-        font.LoadFromTtfFile(fontPath, 32.0f, 512, 512, 32, 96);
+    std::cout << "Font loaded: " << (FontOk ? "OK" : "FAILED") << " tex=" << Font.TextureId() << " atlas=" << Font.AtlasWidth() << "x" << Font.AtlasHeight() << " bake=" << Font.BakePixelHeight() << "\n";
 
-    std::cout << "Font loaded: " << (fontOk ? "OK" : "FAILED")
-        << " tex=" << font.TextureId()
-        << " atlas=" << font.AtlasWidth() << "x" << font.AtlasHeight()
-        << " bake=" << font.BakePixelHeight()
-        << "\n";
-
-
-    // 텍스트 셰이더 로드
-    if (!textShader.LoadFromFiles((shaderDir / "text.vert").string(),
-        (shaderDir / "text.frag").string()))
-    {
+    if (!TextShader.LoadFromFiles((ShaderDir / "text.vert").string(), (ShaderDir / "text.frag").string())) {
         std::cerr << "Failed to load text shader\n";
     }
 
-    textRenderer.Initialize();
+    TextRendererInstance.Initialize();
 
+    asset::Texture2D Checker{};
+    const Fs::path AssetPath{ Fs::current_path() / "assets" / "checker.png" };
+    const bool HasTexture{ Checker.LoadFromFile(AssetPath.string(), true) };
 
-    asset::Texture2D checker;
-    const fs::path assetPath = fs::current_path() / "assets" / "checker.png";
-    const bool hasTex = checker.LoadFromFile(assetPath.string(), true);
+    asset::Model AxisModel{ CreateAxisModel() };
+    asset::Model CubeModel{ CreateTexturedCube() };
 
-    asset::Model axisModel = CreateAxisModel();
-    asset::Model cubeModel = CreateTexturedCube();
+    std::vector<std::pair<asset::Model, const asset::ModelNode*>> Models{};
+    asset::ModelResult Result{};
 
-	std::vector<std::pair<asset::Model,const asset::ModelNode*>> models;
-    asset::ModelResult res; 
-    
-
-
-    glm::vec3 lightPos(2.0f, 1.5f, 2.0f);
-    glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+    glm::vec3 LightPosition{ 2.0f, 1.5f, 2.0f };
+    glm::vec3 LightColor{ 1.0f, 1.0f, 1.0f };
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    while (!glfwWindowShouldClose(window))
-    {
-        timer.Tick();
-        input.NewFrame();
-        input.Poll();
+    while (!glfwWindowShouldClose(Window)) {
+        TimerInstance.Tick();
+        InputHandler.NewFrame();
+        InputHandler.Poll();
 
         {
-            const auto dropped = input.ConsumeDroppedFiles();
-            for (const auto& p : dropped)
-            {
-                res = OnFileDropped(p, models);   
+            const auto Dropped{ InputHandler.ConsumeDroppedFiles() };
+            for (const auto& Path : Dropped) {
+                Result = OnFileDropped(Path, Models);
             }
 
-            if (dropped.size() != 0) {
-                const auto& b = models[0].first.GetBounds(); 
-				auto r = models[0].first.GetBoundingSphereRadius();
-
-                camera.FrameBounds(b.Center(), r, 1.25f);
+            if (!Dropped.empty() && !Models.empty()) {
+                const asset::Model::Bounds& Bounds{ Models[0].first.GetBounds() };
+                const float Radius{ Models[0].first.GetBoundingSphereRadius() };
+                CameraInstance.FrameBounds(Bounds.Center(), Radius, 1.25f);
             }
         }
 
-
-
-        if (input.KeyPressed(GLFW_KEY_ESCAPE))
-        {
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        if (InputHandler.KeyPressed(GLFW_KEY_ESCAPE)) {
+            glfwSetWindowShouldClose(Window, GLFW_TRUE);
         }
 
-        // Camera: orbit with LMB drag, zoom with scroll.
-        if (input.MouseDown(GLFW_MOUSE_BUTTON_LEFT))
-        {
-            const glm::vec2 d = input.MouseDelta();
-            const float rotSpeed = 0.006f;
-            camera.AddYawPitch(-d.x * rotSpeed, -d.y * rotSpeed);
+        if (InputHandler.MouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            const glm::vec2 Delta{ InputHandler.MouseDelta() };
+            const float RotationSpeed{ 0.006f };
+            CameraInstance.AddYawPitch(-Delta.x * RotationSpeed, -Delta.y * RotationSpeed);
         }
         {
-            const float scroll = input.ScrollDelta();
-            if (scroll != 0.0f)
-            {
-                camera.AddZoom(scroll * 0.5f);
+            const float Scroll{ InputHandler.ScrollDelta() };
+            if (Scroll != 0.0f) {
+                CameraInstance.AddZoom(Scroll * 0.5f);
             }
         }
 
-        // Light move (world axis)
-        const float moveSpeed = 2.5f;
-        const float dt = timer.DeltaSeconds();
-        if (input.KeyDown(GLFW_KEY_W)) { lightPos.z += moveSpeed * dt; }
-        if (input.KeyDown(GLFW_KEY_S)) { lightPos.z -= moveSpeed * dt; }
-        if (input.KeyDown(GLFW_KEY_A)) { lightPos.x -= moveSpeed * dt; }
-        if (input.KeyDown(GLFW_KEY_D)) { lightPos.x += moveSpeed * dt; }
-        if (input.KeyDown(GLFW_KEY_Q)) { lightPos.y -= moveSpeed * dt; }
-        if (input.KeyDown(GLFW_KEY_E)) { lightPos.y += moveSpeed * dt; }
+        const float MoveSpeed{ 2.5f };
+        const float DeltaTime{ TimerInstance.DeltaSeconds() };
+        if (InputHandler.KeyDown(GLFW_KEY_W)) {
+            LightPosition.z += MoveSpeed * DeltaTime;
+        }
+        if (InputHandler.KeyDown(GLFW_KEY_S)) {
+            LightPosition.z -= MoveSpeed * DeltaTime;
+        }
+        if (InputHandler.KeyDown(GLFW_KEY_A)) {
+            LightPosition.x -= MoveSpeed * DeltaTime;
+        }
+        if (InputHandler.KeyDown(GLFW_KEY_D)) {
+            LightPosition.x += MoveSpeed * DeltaTime;
+        }
+        if (InputHandler.KeyDown(GLFW_KEY_Q)) {
+            LightPosition.y -= MoveSpeed * DeltaTime;
+        }
+        if (InputHandler.KeyDown(GLFW_KEY_E)) {
+            LightPosition.y += MoveSpeed * DeltaTime;
+        }
 
-        int fbw = 0, fbh = 0;
-        glfwGetFramebufferSize(window, &fbw, &fbh);
-        renderer.Resize(fbw, fbh);
-        camera.SetAspect(static_cast<float>(fbw) / static_cast<float>(fbh));
+        int FramebufferWidth{ 0 };
+        int FramebufferHeight{ 0 };
+        glfwGetFramebufferSize(Window, &FramebufferWidth, &FramebufferHeight);
+        RendererInstance.Resize(FramebufferWidth, FramebufferHeight);
+        CameraInstance.SetAspect(static_cast<float>(FramebufferWidth) / static_cast<float>(FramebufferHeight));
 
-        renderer.BeginFrame(glm::vec4(0.06f, 0.07f, 0.09f, 1.0f));
+        RendererInstance.BeginFrame(glm::vec4{ 0.06f, 0.07f, 0.09f, 1.0f });
 
-        const glm::mat4 view = camera.View();
-        const glm::mat4 proj = camera.Proj();
+        const glm::mat4 View{ CameraInstance.View() };
+        const glm::mat4 Projection{ CameraInstance.Proj() };
 
-        // Draw axes
-        axis.Use();
-        axis.SetMat4("uView", view);
-        axis.SetMat4("uProj", proj);
-        axisModel.Draw();
+        AxisShader.Use();
+        AxisShader.SetMat4("uView", View);
+        AxisShader.SetMat4("uProj", Projection);
+        AxisModel.Draw();
 
         glDisable(GL_CULL_FACE);
-        DrawAxisTickLabels(textRenderer, font, textShader, camera, view, proj, fbw, fbh);
-		glEnable(GL_CULL_FACE);
+        DrawAxisTickLabels(TextRendererInstance, Font, TextShader, CameraInstance, View, Projection, FramebufferWidth, FramebufferHeight);
+        glEnable(GL_CULL_FACE);
 
-        // Draw cube (textured + point light)
-        lit.Use();
-        lit.SetMat4("uModel", glm::mat4(1.0f));
-        lit.SetMat4("uView", view);
-        lit.SetMat4("uProj", proj);
-        lit.SetVec3("uCameraPos", camera.Position());
-        lit.SetVec3("uLightPos", lightPos);
-        lit.SetVec3("uLightColor", lightColor);
-        lit.SetFloat("uAmbientStrength", 0.12f);
-        lit.SetFloat("uSpecStrength", 0.65f);
-        lit.SetFloat("uShininess", 64.0f);
-        lit.SetInt("uAlbedo", 0);
+        LitShader.Use();
+        LitShader.SetMat4("uModel", glm::mat4{ 1.0f });
+        LitShader.SetMat4("uView", View);
+        LitShader.SetMat4("uProj", Projection);
+        LitShader.SetVec3("uCameraPos", CameraInstance.Position());
+        LitShader.SetVec3("uLightPos", LightPosition);
+        LitShader.SetVec3("uLightColor", LightColor);
+        LitShader.SetFloat("uAmbientStrength", 0.12f);
+        LitShader.SetFloat("uSpecStrength", 0.65f);
+        LitShader.SetFloat("uShininess", 64.0f);
+        LitShader.SetInt("uAlbedo", 0);
 
-        if (hasTex)
-        {
-            checker.Bind(0);
+        if (HasTexture) {
+            Checker.Bind(0);
         }
-        else
-        {
-            // If texture missing, bind 0; shader will sample black.
+        else {
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-
-        if (models.size() == 0) {
-            cubeModel.Draw();
+        if (Models.empty()) {
+            CubeModel.Draw();
         }
 
-        for (auto& [model, node] : models) {
-			const glm::mat4 modelMat = ComputeWorldMatrix(*node);
-
-			lit.SetMat4("uModel", modelMat);
-
-            model.Draw(); 
+        for (auto& Entry : Models) {
+            asset::Model& ModelInstance{ Entry.first };
+            const asset::ModelNode* Node{ Entry.second };
+            const glm::mat4 ModelMatrix{ ComputeWorldMatrix(*Node) };
+            LitShader.SetMat4("uModel", ModelMatrix);
+            ModelInstance.Draw();
         }
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(Window);
     }
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(Window);
     glfwTerminate();
     return 0;
 }

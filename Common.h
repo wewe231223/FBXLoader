@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -29,12 +30,22 @@ namespace asset {
         OpenGL,
     };
 
-    struct Vertex final {
+    struct VertexAttributes final {
     public:
-        glm::vec3 Position{ 0.0f, 0.0f, 0.0f };
-        glm::vec3 Normal{ 0.0f, 0.0f, 0.0f };
-        glm::vec2 TexCoord{ 0.0f, 0.0f };
-        glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
+        std::vector<glm::vec3> Positions{};
+        std::vector<glm::vec3> Normals{};
+        std::array<std::vector<glm::vec2>, 4> TexCoords{};
+        std::vector<glm::vec4> Colors{};
+        std::vector<glm::vec3> Tangents{};
+        std::vector<glm::vec3> Bitangents{};
+        std::vector<glm::uvec4> BoneIndices{};
+        std::vector<glm::vec4> BoneWeights{};
+
+        std::size_t VertexCount() const;
+        bool Empty() const;
+
+        void Reserve(std::size_t Count);
+        void Resize(std::size_t Count);
     };
 
     struct AssetError final : public std::runtime_error {

@@ -1,7 +1,13 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "Common.h"
-#include "DataList.h"
 
 namespace asset {
     class ModelNode final {
@@ -12,10 +18,10 @@ namespace asset {
         ModelNode(Id IdValue, std::string Name);
         ~ModelNode() = default;
 
-        ModelNode(const ModelNode&) = delete;
-        ModelNode& operator=(const ModelNode&) = delete;
-        ModelNode(ModelNode&&) = default;
-        ModelNode& operator=(ModelNode&&) = default;
+        ModelNode(const ModelNode& Other) = delete;
+        ModelNode& operator=(const ModelNode& Other) = delete;
+        ModelNode(ModelNode&& Other) = default;
+        ModelNode& operator=(ModelNode&& Other) = default;
 
     public:
         Id GetId() const;
@@ -31,11 +37,11 @@ namespace asset {
         const std::vector<ModelNode*>& GetChildren() const;
         void AddChild(ModelNode* Child);
 
-        DataList& Vertices();
-        const DataList& Vertices() const;
+        VertexAttributes& Vertices();
+        const VertexAttributes& Vertices() const;
 
-        DataList& Indices();
-        const DataList& Indices() const;
+        std::vector<std::uint32_t>& Indices();
+        const std::vector<std::uint32_t>& Indices() const;
 
         std::vector<const ModelNode*> GetChildChain() const;
 
@@ -49,8 +55,8 @@ namespace asset {
         ModelNode* mParent{ nullptr };
         std::vector<ModelNode*> mChildren{};
 
-        DataList mVertices{};
-        DataList mIndices{};
+        VertexAttributes mVertices{};
+        std::vector<std::uint32_t> mIndices{};
     };
 
     class ModelResult final {
@@ -58,10 +64,10 @@ namespace asset {
         ModelResult();
         ~ModelResult() = default;
 
-        ModelResult(const ModelResult&) = delete;
-        ModelResult& operator=(const ModelResult&) = delete;
-        ModelResult(ModelResult&&) = default;
-        ModelResult& operator=(ModelResult&&) = default;
+        ModelResult(const ModelResult& Other) = delete;
+        ModelResult& operator=(const ModelResult& Other) = delete;
+        ModelResult(ModelResult&& Other) = default;
+        ModelResult& operator=(ModelResult&& Other) = default;
 
     public:
         ModelNode* GetRoot() const;
@@ -69,7 +75,7 @@ namespace asset {
         const std::vector<std::unique_ptr<ModelNode>>& Nodes() const;
 
         ModelNode& CreateNode(std::string Name, ModelNode* Parent);
-        void ForEachDFS(const std::function<void(ModelNode&)>& Function) const;
+        void ForEachDfs(const std::function<void(ModelNode&)>& Function) const;
 
     private:
         std::vector<std::unique_ptr<ModelNode>> mNodes{};

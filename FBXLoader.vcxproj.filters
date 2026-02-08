@@ -10,6 +10,9 @@
     <ClCompile Include="Camera.cpp">
       <Filter>viewer</Filter>
     </ClCompile>
+    <ClCompile Include="Common.cpp">
+      <Filter>viewer</Filter>
+    </ClCompile>
     <ClCompile Include="Input.cpp">
       <Filter>viewer</Filter>
     </ClCompile>

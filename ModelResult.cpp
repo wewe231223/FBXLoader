@@ -1,11 +1,12 @@
 #include "ModelResult.h"
+
 #include <algorithm>
 
 using namespace asset;
 
 ModelNode::ModelNode(Id IdValue, std::string Name)
     : mId{ IdValue },
-    mName{ std::move(Name) } {
+	mName{ std::move(Name) } {
 }
 
 ModelNode::Id ModelNode::GetId() const {
@@ -46,19 +47,19 @@ void ModelNode::AddChild(ModelNode* Child) {
     Child->mParent = this;
 }
 
-DataList& ModelNode::Vertices() {
+VertexAttributes& ModelNode::Vertices() {
     return mVertices;
 }
 
-const DataList& ModelNode::Vertices() const {
+const VertexAttributes& ModelNode::Vertices() const {
     return mVertices;
 }
 
-DataList& ModelNode::Indices() {
+std::vector<std::uint32_t>& ModelNode::Indices() {
     return mIndices;
 }
 
-const DataList& ModelNode::Indices() const {
+const std::vector<std::uint32_t>& ModelNode::Indices() const {
     return mIndices;
 }
 
@@ -101,7 +102,7 @@ ModelNode& ModelResult::CreateNode(std::string Name, ModelNode* Parent) {
     return Node;
 }
 
-void ModelResult::ForEachDFS(const std::function<void(ModelNode&)>& Function) const {
+void ModelResult::ForEachDfs(const std::function<void(ModelNode&)>& Function) const {
     if (mRoot == nullptr) {
         return;
     }
@@ -112,8 +113,8 @@ void ModelResult::ForEachDFS(const std::function<void(ModelNode&)>& Function) co
         Stack.pop_back();
         Function(*Node);
         const std::vector<ModelNode*>& Children{ Node->GetChildren() };
-        for (std::size_t I{ Children.size() }; I > 0; --I) {
-            Stack.push_back(Children[I - 1]);
+        for (std::size_t Index{ Children.size() }; Index > 0; --Index) {
+            Stack.push_back(Children[Index - 1]);
         }
     }
 }
