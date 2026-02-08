@@ -26,6 +26,7 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MaterialVisitor.cpp" />
     <ClCompile Include="MeshHierarchyBuilder.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ModelResult.cpp" />
@@ -44,6 +45,7 @@
     <ClInclude Include="FontAtlas.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="MeshHierarchyBuilder.h" />
+    <ClInclude Include="MaterialVisitor.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelResult.h" />
     <ClInclude Include="Renderer.h" />

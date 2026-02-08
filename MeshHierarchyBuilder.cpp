@@ -7,14 +7,15 @@
 
 using namespace asset;
 
-MeshHierarchyBuilder::MeshHierarchyBuilder(ModelResult& OutResult)
-    : mResult{ OutResult } {
+MeshHierarchyBuilder::MeshHierarchyBuilder(ModelResult& OutResult, const std::unordered_map<const ufbx_material*, std::size_t>* MaterialLookup)
+    : mResult{ OutResult }
+    , mMaterialLookup{ MaterialLookup } {
 }
 
 MeshHierarchyBuilder::~MeshHierarchyBuilder() = default;
 
 void MeshHierarchyBuilder::OnNodeBegin(const ufbx_scene& Scene, const ufbx_node& Node, const NodeVisitContext& Context) {
-    (void)Scene;
+    static_cast<void>(Scene);
     ModelNode* ParentNode{ nullptr };
     if (!mNodeStack.empty()) {
         ParentNode = mNodeStack.back();
@@ -25,6 +26,24 @@ void MeshHierarchyBuilder::OnNodeBegin(const ufbx_scene& Scene, const ufbx_node&
     ModelNode& OutNode{ mResult.CreateNode(Name, ParentNode) };
     OutNode.SetNodeToParent(Context.mNodeToParent);
     OutNode.SetGeometryToNode(Context.mGeometryToNode);
+    if (mMaterialLookup != nullptr && Node.materials.count > 0) {
+        std::vector<std::size_t> MaterialIndices{};
+        MaterialIndices.reserve(Node.materials.count);
+        for (std::size_t Index{ 0 }; Index < Node.materials.count; ++Index) {
+            const ufbx_material* MaterialData{ Node.materials.data[Index] };
+            if (MaterialData == nullptr) {
+                continue;
+            }
+            auto Lookup{ mMaterialLookup->find(MaterialData) };
+            if (Lookup == mMaterialLookup->end()) {
+                continue;
+            }
+            MaterialIndices.push_back(Lookup->second);
+        }
+        if (!MaterialIndices.empty()) {
+            OutNode.SetMaterialIndices(std::move(MaterialIndices));
+        }
+    }
     if (Node.mesh != nullptr) {
         AppendIndexedMeshUfbx(*Node.mesh, OutNode.Vertices(), OutNode.Indices());
     }
@@ -32,8 +51,8 @@ void MeshHierarchyBuilder::OnNodeBegin(const ufbx_scene& Scene, const ufbx_node&
 }
 
 void MeshHierarchyBuilder::OnNodeEnd(const ufbx_scene& Scene, const ufbx_node& Node) {
-    (void)Scene;
-    (void)Node;
+    static_cast<void>(Scene);
+    static_cast<void>(Node);
     if (!mNodeStack.empty()) {
         mNodeStack.pop_back();
         return;
