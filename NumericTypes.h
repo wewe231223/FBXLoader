@@ -2,6 +2,13 @@
 
 #include <cstdint>
 
+namespace DirectX::SimpleMath {
+    struct Vector2;
+    struct Vector3;
+    struct Vector4;
+    struct Matrix;
+}
+
 namespace asset {
     struct Vec2 final {
     public:
@@ -54,4 +61,10 @@ namespace asset {
 
         float mValue[4][4];
     };
+
+    DirectX::SimpleMath::Vector2 ToSimpleMath(const Vec2& Value);
+    DirectX::SimpleMath::Vector3 ToSimpleMath(const Vec3& Value);
+    DirectX::SimpleMath::Vector4 ToSimpleMath(const Vec4& Value);
+    DirectX::SimpleMath::Vector4 ToSimpleMath(const UVec4& Value);
+    DirectX::SimpleMath::Matrix ToSimpleMath(const Mat4& Value);
 }
