@@ -1,5 +1,7 @@
 #include "Model.h"
 
+#include "ViewerMath.h"
+
 #include <cstddef>
 
 namespace asset {
@@ -98,12 +100,13 @@ namespace asset {
             return false;
         }
 
-        mBounds.Min = Vertices.Positions.front();
-        mBounds.Max = Vertices.Positions.front();
+        mBounds.Min = ToGlmVec3(Vertices.Positions.front());
+        mBounds.Max = ToGlmVec3(Vertices.Positions.front());
 
-        for (const glm::vec3& Position : Vertices.Positions) {
-            mBounds.Min = glm::min(mBounds.Min, Position);
-            mBounds.Max = glm::max(mBounds.Max, Position);
+        for (const Vec3& Position : Vertices.Positions) {
+            const glm::vec3 Converted{ ToGlmVec3(Position) };
+            mBounds.Min = glm::min(mBounds.Min, Converted);
+            mBounds.Max = glm::max(mBounds.Max, Converted);
         }
 
         const glm::vec3 Extents{ mBounds.Extents() };
@@ -121,20 +124,20 @@ namespace asset {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(Indices.size_bytes()), Indices.data(), GL_STATIC_DRAW);
 
-        SetupVertexBuffer(mPositionBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Positions.data()), Vertices.Positions.size() * sizeof(glm::vec3) }, 0, 3, GL_FLOAT, false, false);
-        SetupVertexBuffer(mNormalBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Normals.data()), Vertices.Normals.size() * sizeof(glm::vec3) }, 1, 3, GL_FLOAT, false, false);
+        SetupVertexBuffer(mPositionBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Positions.data()), Vertices.Positions.size() * sizeof(Vec3) }, 0, 3, GL_FLOAT, false, false);
+        SetupVertexBuffer(mNormalBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Normals.data()), Vertices.Normals.size() * sizeof(Vec3) }, 1, 3, GL_FLOAT, false, false);
 
         for (std::size_t Index{ 0 }; Index < Vertices.TexCoords.size(); ++Index) {
-            const std::vector<glm::vec2>& TexCoords{ Vertices.TexCoords[Index] };
+            const std::vector<Vec2>& TexCoords{ Vertices.TexCoords[Index] };
             const GLuint AttributeIndex{ static_cast<GLuint>(2 + Index) };
-            SetupVertexBuffer(mTexCoordBuffers[Index], std::span<const std::byte>{ reinterpret_cast<const std::byte*>(TexCoords.data()), TexCoords.size() * sizeof(glm::vec2) }, AttributeIndex, 2, GL_FLOAT, false, false);
+            SetupVertexBuffer(mTexCoordBuffers[Index], std::span<const std::byte>{ reinterpret_cast<const std::byte*>(TexCoords.data()), TexCoords.size() * sizeof(Vec2) }, AttributeIndex, 2, GL_FLOAT, false, false);
         }
 
-        SetupVertexBuffer(mColorBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Colors.data()), Vertices.Colors.size() * sizeof(glm::vec4) }, 6, 4, GL_FLOAT, false, false);
-        SetupVertexBuffer(mTangentBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Tangents.data()), Vertices.Tangents.size() * sizeof(glm::vec3) }, 7, 3, GL_FLOAT, false, false);
-        SetupVertexBuffer(mBitangentBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Bitangents.data()), Vertices.Bitangents.size() * sizeof(glm::vec3) }, 8, 3, GL_FLOAT, false, false);
-        SetupVertexBuffer(mBoneIndexBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.BoneIndices.data()), Vertices.BoneIndices.size() * sizeof(glm::uvec4) }, 9, 4, GL_UNSIGNED_INT, false, true);
-        SetupVertexBuffer(mBoneWeightBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.BoneWeights.data()), Vertices.BoneWeights.size() * sizeof(glm::vec4) }, 10, 4, GL_FLOAT, false, false);
+        SetupVertexBuffer(mColorBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Colors.data()), Vertices.Colors.size() * sizeof(Vec4) }, 6, 4, GL_FLOAT, false, false);
+        SetupVertexBuffer(mTangentBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Tangents.data()), Vertices.Tangents.size() * sizeof(Vec3) }, 7, 3, GL_FLOAT, false, false);
+        SetupVertexBuffer(mBitangentBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.Bitangents.data()), Vertices.Bitangents.size() * sizeof(Vec3) }, 8, 3, GL_FLOAT, false, false);
+        SetupVertexBuffer(mBoneIndexBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.BoneIndices.data()), Vertices.BoneIndices.size() * sizeof(UVec4) }, 9, 4, GL_UNSIGNED_INT, false, true);
+        SetupVertexBuffer(mBoneWeightBuffer, std::span<const std::byte>{ reinterpret_cast<const std::byte*>(Vertices.BoneWeights.data()), Vertices.BoneWeights.size() * sizeof(Vec4) }, 10, 4, GL_FLOAT, false, false);
 
         glBindVertexArray(0);
 
@@ -214,7 +217,7 @@ namespace asset {
         if (!Vertices.Normals.empty() && Vertices.Normals.size() != Count) {
             return false;
         }
-        for (const std::vector<glm::vec2>& TexCoords : Vertices.TexCoords) {
+        for (const std::vector<Vec2>& TexCoords : Vertices.TexCoords) {
             if (!TexCoords.empty() && TexCoords.size() != Count) {
                 return false;
             }

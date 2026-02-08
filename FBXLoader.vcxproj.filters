@@ -53,6 +53,9 @@
     <ClCompile Include="ModelResult.cpp">
       <Filter>Loader</Filter>
     </ClCompile>
+    <ClCompile Include="NumericTypes.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
     <ClCompile Include="FontAtlas.cpp">
       <Filter>viewer</Filter>
     </ClCompile>
@@ -64,6 +67,9 @@
     </ClCompile>
     <ClCompile Include="FbxAssetImporter.cpp">
       <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="ViewerMath.cpp">
+      <Filter>viewer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -126,6 +132,9 @@
     <ClInclude Include="ModelResult.h">
       <Filter>Loader</Filter>
     </ClInclude>
+    <ClInclude Include="NumericTypes.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
     <ClInclude Include="SceneVisitor.h">
       <Filter>Loader</Filter>
     </ClInclude>
@@ -143,6 +152,9 @@
     </ClInclude>
     <ClInclude Include="FbxAssetImporter.h">
       <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="ViewerMath.h">
+      <Filter>viewer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

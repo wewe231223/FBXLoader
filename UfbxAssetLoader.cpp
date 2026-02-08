@@ -54,12 +54,24 @@ UfbxAssetLoader::UfbxAssetLoader(GraphicsAPI Api)
     : mApi{ Api } {
 }
 
-glm::mat4 UfbxAssetLoader::ToGlmMat4(const ufbx_matrix& Matrix) {
-    glm::mat4 Out{ 1.0f };
-    Out[0] = glm::vec4{ static_cast<float>(Matrix.cols[0].x), static_cast<float>(Matrix.cols[0].y), static_cast<float>(Matrix.cols[0].z), 0.0f };
-    Out[1] = glm::vec4{ static_cast<float>(Matrix.cols[1].x), static_cast<float>(Matrix.cols[1].y), static_cast<float>(Matrix.cols[1].z), 0.0f };
-    Out[2] = glm::vec4{ static_cast<float>(Matrix.cols[2].x), static_cast<float>(Matrix.cols[2].y), static_cast<float>(Matrix.cols[2].z), 0.0f };
-    Out[3] = glm::vec4{ static_cast<float>(Matrix.cols[3].x), static_cast<float>(Matrix.cols[3].y), static_cast<float>(Matrix.cols[3].z), 1.0f };
+Mat4 UfbxAssetLoader::ToMat4(const ufbx_matrix& Matrix) {
+    Mat4 Out{ 1.0f };
+    Out.mValue[0][0] = static_cast<float>(Matrix.cols[0].x);
+    Out.mValue[1][0] = static_cast<float>(Matrix.cols[0].y);
+    Out.mValue[2][0] = static_cast<float>(Matrix.cols[0].z);
+    Out.mValue[3][0] = 0.0f;
+    Out.mValue[0][1] = static_cast<float>(Matrix.cols[1].x);
+    Out.mValue[1][1] = static_cast<float>(Matrix.cols[1].y);
+    Out.mValue[2][1] = static_cast<float>(Matrix.cols[1].z);
+    Out.mValue[3][1] = 0.0f;
+    Out.mValue[0][2] = static_cast<float>(Matrix.cols[2].x);
+    Out.mValue[1][2] = static_cast<float>(Matrix.cols[2].y);
+    Out.mValue[2][2] = static_cast<float>(Matrix.cols[2].z);
+    Out.mValue[3][2] = 0.0f;
+    Out.mValue[0][3] = static_cast<float>(Matrix.cols[3].x);
+    Out.mValue[1][3] = static_cast<float>(Matrix.cols[3].y);
+    Out.mValue[2][3] = static_cast<float>(Matrix.cols[3].z);
+    Out.mValue[3][3] = 1.0f;
     return Out;
 }
 
@@ -97,12 +109,12 @@ void UfbxAssetLoader::LoadAndTraverse(std::string_view FilePath, std::span<IScen
 void UfbxAssetLoader::TraverseNode(const ufbx_scene& Scene, const ufbx_node& Node, const ufbx_node* Parent, std::span<ISceneNodeVisitor* const> Visitors) {
     NodeVisitContext Context{};
     Context.mParent = Parent;
-    Context.mNodeToParent = ToGlmMat4(Node.node_to_parent);
+    Context.mNodeToParent = ToMat4(Node.node_to_parent);
     if (Node.has_geometry_transform) {
-        Context.mGeometryToNode = ToGlmMat4(Node.geometry_to_node);
+        Context.mGeometryToNode = ToMat4(Node.geometry_to_node);
     }
     else {
-        Context.mGeometryToNode = glm::mat4{ 1.0f };
+        Context.mGeometryToNode = Mat4{ 1.0f };
     }
     for (ISceneNodeVisitor* Visitor : Visitors) {
         if (Visitor != nullptr) {

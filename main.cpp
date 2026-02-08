@@ -32,6 +32,7 @@
 #include "TextRenderer.h"
 #include "Texture.h"
 #include "Timer.h"
+#include "ViewerMath.h"
 
 namespace Fs = std::filesystem;
 
@@ -39,7 +40,7 @@ namespace {
     constexpr int WindowWidth{ 1280 };
     constexpr int WindowHeight{ 720 };
 
-    void AppendVertex(asset::VertexAttributes& Vertices, const glm::vec3& Position, const glm::vec3& Normal, const std::array<glm::vec2, 4>& TexCoords, const glm::vec4& Color, const glm::vec3& Tangent, const glm::vec3& Bitangent, const glm::uvec4& BoneIndices, const glm::vec4& BoneWeights) {
+    void AppendVertex(asset::VertexAttributes& Vertices, const asset::Vec3& Position, const asset::Vec3& Normal, const std::array<asset::Vec2, 4>& TexCoords, const asset::Vec4& Color, const asset::Vec3& Tangent, const asset::Vec3& Bitangent, const asset::UVec4& BoneIndices, const asset::Vec4& BoneWeights) {
         Vertices.Positions.push_back(Position);
         Vertices.Normals.push_back(Normal);
         for (std::size_t Index{ 0 }; Index < Vertices.TexCoords.size(); ++Index) {
@@ -97,14 +98,14 @@ namespace {
         Vertices.Reserve(6 + EstimatedTicks);
         Indices.reserve(6 + EstimatedTicks);
 
-        const glm::vec3 Normal{ 0.0f, 1.0f, 0.0f };
-        const std::array<glm::vec2, 4> TexCoords{ glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
-        const glm::vec3 Tangent{ 0.0f, 0.0f, 0.0f };
-        const glm::vec3 Bitangent{ 0.0f, 0.0f, 0.0f };
-        const glm::uvec4 BoneIndices{ 0, 0, 0, 0 };
-        const glm::vec4 BoneWeights{ 0.0f, 0.0f, 0.0f, 0.0f };
+        const asset::Vec3 Normal{ 0.0f, 1.0f, 0.0f };
+        const std::array<asset::Vec2, 4> TexCoords{ asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f } };
+        const asset::Vec3 Tangent{ 0.0f, 0.0f, 0.0f };
+        const asset::Vec3 Bitangent{ 0.0f, 0.0f, 0.0f };
+        const asset::UVec4 BoneIndices{ 0, 0, 0, 0 };
+        const asset::Vec4 BoneWeights{ 0.0f, 0.0f, 0.0f, 0.0f };
 
-        auto AddLine = [&](const glm::vec3& Start, const glm::vec3& End, const glm::vec4& StartColor, const glm::vec4& EndColor) {
+        auto AddLine = [&](const asset::Vec3& Start, const asset::Vec3& End, const asset::Vec4& StartColor, const asset::Vec4& EndColor) {
             const std::uint32_t Base{ static_cast<std::uint32_t>(Vertices.VertexCount()) };
             AppendVertex(Vertices, Start, Normal, TexCoords, StartColor, Tangent, Bitangent, BoneIndices, BoneWeights);
             AppendVertex(Vertices, End, Normal, TexCoords, EndColor, Tangent, Bitangent, BoneIndices, BoneWeights);
@@ -112,7 +113,7 @@ namespace {
             Indices.push_back(Base + 1);
         };
 
-        auto AddTick = [&](const glm::vec3& Start, const glm::vec3& End, const glm::vec4& Color) {
+        auto AddTick = [&](const asset::Vec3& Start, const asset::Vec3& End, const asset::Vec4& Color) {
             const std::uint32_t Base{ static_cast<std::uint32_t>(Vertices.VertexCount()) };
             AppendVertex(Vertices, Start, Normal, TexCoords, Color, Tangent, Bitangent, BoneIndices, BoneWeights);
             AppendVertex(Vertices, End, Normal, TexCoords, Color, Tangent, Bitangent, BoneIndices, BoneWeights);
@@ -120,16 +121,16 @@ namespace {
             Indices.push_back(Base + 1);
         };
 
-        AddLine(glm::vec3{ -AxisLength, 0.0f, 0.0f }, glm::vec3{ AxisLength, 0.0f, 0.0f }, glm::vec4{ 0.5f, 0.0f, 0.0f, 1.0f }, glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-        AddLine(glm::vec3{ 0.0f, -AxisLength, 0.0f }, glm::vec3{ 0.0f, AxisLength, 0.0f }, glm::vec4{ 0.0f, 0.5f, 0.0f, 1.0f }, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-        AddLine(glm::vec3{ 0.0f, 0.0f, -AxisLength }, glm::vec3{ 0.0f, 0.0f, AxisLength }, glm::vec4{ 0.0f, 0.0f, 0.5f, 1.0f }, glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
+        AddLine(asset::Vec3{ -AxisLength, 0.0f, 0.0f }, asset::Vec3{ AxisLength, 0.0f, 0.0f }, asset::Vec4{ 0.5f, 0.0f, 0.0f, 1.0f }, asset::Vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+        AddLine(asset::Vec3{ 0.0f, -AxisLength, 0.0f }, asset::Vec3{ 0.0f, AxisLength, 0.0f }, asset::Vec4{ 0.0f, 0.5f, 0.0f, 1.0f }, asset::Vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+        AddLine(asset::Vec3{ 0.0f, 0.0f, -AxisLength }, asset::Vec3{ 0.0f, 0.0f, AxisLength }, asset::Vec4{ 0.0f, 0.0f, 0.5f, 1.0f }, asset::Vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
 
         for (float X{ -AxisLength }; X <= AxisLength + 0.0001f; X += TickInterval) {
             if (std::abs(X) < 0.0001f) {
                 continue;
             }
 
-            AddTick(glm::vec3{ X, -TickSize, 0.0f }, glm::vec3{ X, TickSize, 0.0f }, glm::vec4{ 0.7f, 0.0f, 0.0f, 1.0f });
+            AddTick(asset::Vec3{ X, -TickSize, 0.0f }, asset::Vec3{ X, TickSize, 0.0f }, asset::Vec4{ 0.7f, 0.0f, 0.0f, 1.0f });
         }
 
         for (float Y{ -AxisLength }; Y <= AxisLength + 0.0001f; Y += TickInterval) {
@@ -137,7 +138,7 @@ namespace {
                 continue;
             }
 
-            AddTick(glm::vec3{ -TickSize, Y, 0.0f }, glm::vec3{ TickSize, Y, 0.0f }, glm::vec4{ 0.0f, 0.7f, 0.0f, 1.0f });
+            AddTick(asset::Vec3{ -TickSize, Y, 0.0f }, asset::Vec3{ TickSize, Y, 0.0f }, asset::Vec4{ 0.0f, 0.7f, 0.0f, 1.0f });
         }
 
         for (float Z{ -AxisLength }; Z <= AxisLength + 0.0001f; Z += TickInterval) {
@@ -145,7 +146,7 @@ namespace {
                 continue;
             }
 
-            AddTick(glm::vec3{ 0.0f, -TickSize, Z }, glm::vec3{ 0.0f, TickSize, Z }, glm::vec4{ 0.0f, 0.0f, 0.7f, 1.0f });
+            AddTick(asset::Vec3{ 0.0f, -TickSize, Z }, asset::Vec3{ 0.0f, TickSize, Z }, asset::Vec4{ 0.0f, 0.0f, 0.7f, 1.0f });
         }
 
         asset::Model ModelInstance{};
@@ -157,17 +158,17 @@ namespace {
         asset::VertexAttributes Vertices{};
         Vertices.Reserve(24);
 
-        const glm::vec4 White{ 1.0f };
-        const glm::vec3 Tangent{ 0.0f, 0.0f, 0.0f };
-        const glm::vec3 Bitangent{ 0.0f, 0.0f, 0.0f };
-        const glm::uvec4 BoneIndices{ 0, 0, 0, 0 };
-        const glm::vec4 BoneWeights{ 0.0f, 0.0f, 0.0f, 0.0f };
+        const asset::Vec4 White{ 1.0f, 1.0f, 1.0f, 1.0f };
+        const asset::Vec3 Tangent{ 0.0f, 0.0f, 0.0f };
+        const asset::Vec3 Bitangent{ 0.0f, 0.0f, 0.0f };
+        const asset::UVec4 BoneIndices{ 0, 0, 0, 0 };
+        const asset::Vec4 BoneWeights{ 0.0f, 0.0f, 0.0f, 0.0f };
 
-        auto AddFace = [&](const glm::vec3& Normal, const glm::vec3& Position0, const glm::vec3& Position1, const glm::vec3& Position2, const glm::vec3& Position3) {
-            std::array<glm::vec2, 4> TexCoords0{ glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
-            std::array<glm::vec2, 4> TexCoords1{ glm::vec2{ 1.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
-            std::array<glm::vec2, 4> TexCoords2{ glm::vec2{ 1.0f, 1.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
-            std::array<glm::vec2, 4> TexCoords3{ glm::vec2{ 0.0f, 1.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f }, glm::vec2{ 0.0f, 0.0f } };
+        auto AddFace = [&](const asset::Vec3& Normal, const asset::Vec3& Position0, const asset::Vec3& Position1, const asset::Vec3& Position2, const asset::Vec3& Position3) {
+            std::array<asset::Vec2, 4> TexCoords0{ asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f } };
+            std::array<asset::Vec2, 4> TexCoords1{ asset::Vec2{ 1.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f } };
+            std::array<asset::Vec2, 4> TexCoords2{ asset::Vec2{ 1.0f, 1.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f } };
+            std::array<asset::Vec2, 4> TexCoords3{ asset::Vec2{ 0.0f, 1.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f }, asset::Vec2{ 0.0f, 0.0f } };
 
             AppendVertex(Vertices, Position0, Normal, TexCoords0, White, Tangent, Bitangent, BoneIndices, BoneWeights);
             AppendVertex(Vertices, Position1, Normal, TexCoords1, White, Tangent, Bitangent, BoneIndices, BoneWeights);
@@ -177,12 +178,12 @@ namespace {
 
         const float Size{ 0.5f };
 
-        AddFace(glm::vec3{ 0.0f, 0.0f, 1.0f }, glm::vec3{ -Size, -Size, Size }, glm::vec3{ Size, -Size, Size }, glm::vec3{ Size, Size, Size }, glm::vec3{ -Size, Size, Size });
-        AddFace(glm::vec3{ 0.0f, 0.0f, -1.0f }, glm::vec3{ Size, -Size, -Size }, glm::vec3{ -Size, -Size, -Size }, glm::vec3{ -Size, Size, -Size }, glm::vec3{ Size, Size, -Size });
-        AddFace(glm::vec3{ 1.0f, 0.0f, 0.0f }, glm::vec3{ Size, -Size, Size }, glm::vec3{ Size, -Size, -Size }, glm::vec3{ Size, Size, -Size }, glm::vec3{ Size, Size, Size });
-        AddFace(glm::vec3{ -1.0f, 0.0f, 0.0f }, glm::vec3{ -Size, -Size, -Size }, glm::vec3{ -Size, -Size, Size }, glm::vec3{ -Size, Size, Size }, glm::vec3{ -Size, Size, -Size });
-        AddFace(glm::vec3{ 0.0f, 1.0f, 0.0f }, glm::vec3{ -Size, Size, Size }, glm::vec3{ Size, Size, Size }, glm::vec3{ Size, Size, -Size }, glm::vec3{ -Size, Size, -Size });
-        AddFace(glm::vec3{ 0.0f, -1.0f, 0.0f }, glm::vec3{ -Size, -Size, -Size }, glm::vec3{ Size, -Size, -Size }, glm::vec3{ Size, -Size, Size }, glm::vec3{ -Size, -Size, Size });
+        AddFace(asset::Vec3{ 0.0f, 0.0f, 1.0f }, asset::Vec3{ -Size, -Size, Size }, asset::Vec3{ Size, -Size, Size }, asset::Vec3{ Size, Size, Size }, asset::Vec3{ -Size, Size, Size });
+        AddFace(asset::Vec3{ 0.0f, 0.0f, -1.0f }, asset::Vec3{ Size, -Size, -Size }, asset::Vec3{ -Size, -Size, -Size }, asset::Vec3{ -Size, Size, -Size }, asset::Vec3{ Size, Size, -Size });
+        AddFace(asset::Vec3{ 1.0f, 0.0f, 0.0f }, asset::Vec3{ Size, -Size, Size }, asset::Vec3{ Size, -Size, -Size }, asset::Vec3{ Size, Size, -Size }, asset::Vec3{ Size, Size, Size });
+        AddFace(asset::Vec3{ -1.0f, 0.0f, 0.0f }, asset::Vec3{ -Size, -Size, -Size }, asset::Vec3{ -Size, -Size, Size }, asset::Vec3{ -Size, Size, Size }, asset::Vec3{ -Size, Size, -Size });
+        AddFace(asset::Vec3{ 0.0f, 1.0f, 0.0f }, asset::Vec3{ -Size, Size, Size }, asset::Vec3{ Size, Size, Size }, asset::Vec3{ Size, Size, -Size }, asset::Vec3{ -Size, Size, -Size });
+        AddFace(asset::Vec3{ 0.0f, -1.0f, 0.0f }, asset::Vec3{ -Size, -Size, -Size }, asset::Vec3{ Size, -Size, -Size }, asset::Vec3{ Size, -Size, Size }, asset::Vec3{ -Size, -Size, Size });
 
         std::vector<std::uint32_t> Indices{};
         Indices.reserve(36);
@@ -306,8 +307,8 @@ namespace {
 
         for (std::size_t Index{ 0 }; Index < Chain.size(); ++Index) {
             const asset::ModelNode* Current{ Chain[Index] };
-            World = World * Current->GetNodeToParent();
-            World = World * Current->GetGeometryToNode();
+            World = World * asset::ToGlmMat4(Current->GetNodeToParent());
+            World = World * asset::ToGlmMat4(Current->GetGeometryToNode());
         }
 
         return World;

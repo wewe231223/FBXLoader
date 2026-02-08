@@ -17,19 +17,19 @@ const std::string& ModelNode::GetName() const {
     return mName;
 }
 
-const glm::mat4& ModelNode::GetNodeToParent() const {
+const Mat4& ModelNode::GetNodeToParent() const {
     return mNodeToParent;
 }
 
-void ModelNode::SetNodeToParent(const glm::mat4& NodeToParent) {
+void ModelNode::SetNodeToParent(const Mat4& NodeToParent) {
     mNodeToParent = NodeToParent;
 }
 
-const glm::mat4& ModelNode::GetGeometryToNode() const {
+const Mat4& ModelNode::GetGeometryToNode() const {
     return mGeometryToNode;
 }
 
-void ModelNode::SetGeometryToNode(const glm::mat4& GeometryToNode) {
+void ModelNode::SetGeometryToNode(const Mat4& GeometryToNode) {
     mGeometryToNode = GeometryToNode;
 }
 

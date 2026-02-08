@@ -1,11 +1,23 @@
 #include "MeshHierarchyBuilder.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
 
 using namespace asset;
+
+namespace {
+    Vec3 NormalizeVec3(const Vec3& Value) {
+        const float LengthValue{ std::sqrt((Value.mX * Value.mX) + (Value.mY * Value.mY) + (Value.mZ * Value.mZ)) };
+        if (LengthValue <= 0.0f) {
+            return Vec3{ 0.0f, 1.0f, 0.0f };
+        }
+        const float InvLength{ 1.0f / LengthValue };
+        return Vec3{ Value.mX * InvLength, Value.mY * InvLength, Value.mZ * InvLength };
+    }
+}
 
 MeshHierarchyBuilder::MeshHierarchyBuilder(ModelResult& OutResult, const std::unordered_map<const ufbx_material*, std::size_t>* MaterialLookup)
     : mResult{ OutResult }
@@ -60,99 +72,109 @@ void MeshHierarchyBuilder::OnNodeEnd(const ufbx_scene& Scene, const ufbx_node& N
     throw AssetError{ "MeshHierarchyBuilder: node stack underflow" };
 }
 
-glm::vec3 MeshHierarchyBuilder::ToGlmVec3(const ufbx_vec3& Value) {
-    return glm::vec3{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z) };
+Vec3 MeshHierarchyBuilder::ToVec3(const ufbx_vec3& Value) {
+    return Vec3{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z) };
 }
 
-glm::vec2 MeshHierarchyBuilder::ToGlmVec2(const ufbx_vec2& Value) {
-    return glm::vec2{ static_cast<float>(Value.x), static_cast<float>(Value.y) };
+Vec2 MeshHierarchyBuilder::ToVec2(const ufbx_vec2& Value) {
+    return Vec2{ static_cast<float>(Value.x), static_cast<float>(Value.y) };
 }
 
-glm::vec4 MeshHierarchyBuilder::ToGlmVec4(const ufbx_vec4& Value) {
-    return glm::vec4{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z), static_cast<float>(Value.w) };
+Vec4 MeshHierarchyBuilder::ToVec4(const ufbx_vec4& Value) {
+    return Vec4{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z), static_cast<float>(Value.w) };
 }
 
-glm::vec3 MeshHierarchyBuilder::ReadPosition(const ufbx_mesh& Mesh, std::uint32_t Index) const {
+Vec3 MeshHierarchyBuilder::ReadPosition(const ufbx_mesh& Mesh, std::uint32_t Index) const {
     const ufbx_vec3 Value{ ufbx_get_vertex_vec3(&Mesh.vertex_position, Index) };
-    return ToGlmVec3(Value);
+    return ToVec3(Value);
 }
 
-glm::vec3 MeshHierarchyBuilder::ReadNormal(const ufbx_mesh& Mesh, std::uint32_t Index) const {
+Vec3 MeshHierarchyBuilder::ReadNormal(const ufbx_mesh& Mesh, std::uint32_t Index) const {
     if (Mesh.vertex_normal.exists) {
         const ufbx_vec3 Value{ ufbx_get_vertex_vec3(&Mesh.vertex_normal, Index) };
-        return glm::normalize(ToGlmVec3(Value));
+        return NormalizeVec3(ToVec3(Value));
     }
-    return glm::vec3{ 0.0f, 1.0f, 0.0f };
+    return Vec3{ 0.0f, 1.0f, 0.0f };
 }
 
-glm::vec2 MeshHierarchyBuilder::ReadTexCoord(const ufbx_mesh& Mesh, std::size_t SetIndex, std::uint32_t Index) const {
+Vec2 MeshHierarchyBuilder::ReadTexCoord(const ufbx_mesh& Mesh, std::size_t SetIndex, std::uint32_t Index) const {
     if (SetIndex == 0) {
         if (Mesh.vertex_uv.exists) {
             const ufbx_vec2 Value{ ufbx_get_vertex_vec2(&Mesh.vertex_uv, Index) };
-            return ToGlmVec2(Value);
+            return ToVec2(Value);
         }
-        return glm::vec2{ 0.0f, 0.0f };
+        return Vec2{ 0.0f, 0.0f };
     }
 
     if (SetIndex < Mesh.uv_sets.count) {
         const ufbx_uv_set& Set{ Mesh.uv_sets.data[SetIndex] };
         if (Set.vertex_uv.exists) {
             const ufbx_vec2 Value{ ufbx_get_vertex_vec2(&Set.vertex_uv, Index) };
-            return ToGlmVec2(Value);
+            return ToVec2(Value);
         }
     }
-    return glm::vec2{ 0.0f, 0.0f };
+    return Vec2{ 0.0f, 0.0f };
 }
 
-glm::vec4 MeshHierarchyBuilder::ReadColor(const ufbx_mesh& Mesh, std::uint32_t Index) const {
+Vec4 MeshHierarchyBuilder::ReadColor(const ufbx_mesh& Mesh, std::uint32_t Index) const {
     if (Mesh.vertex_color.exists) {
         const ufbx_vec4 Value{ ufbx_get_vertex_vec4(&Mesh.vertex_color, Index) };
-        return ToGlmVec4(Value);
+        return ToVec4(Value);
     }
-    return glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f };
+    return Vec4{ 1.0f, 1.0f, 1.0f, 1.0f };
 }
 
-glm::vec3 MeshHierarchyBuilder::ReadTangent(const ufbx_mesh& Mesh, std::uint32_t Index) const {
+Vec3 MeshHierarchyBuilder::ReadTangent(const ufbx_mesh& Mesh, std::uint32_t Index) const {
     if (Mesh.vertex_tangent.exists) {
         const ufbx_vec3 Value{ ufbx_get_vertex_vec3(&Mesh.vertex_tangent, Index) };
-        return ToGlmVec3(Value);
+        return ToVec3(Value);
     }
-    return glm::vec3{ 0.0f, 0.0f, 0.0f };
+    return Vec3{ 0.0f, 0.0f, 0.0f };
 }
 
-glm::vec3 MeshHierarchyBuilder::ReadBitangent(const ufbx_mesh& Mesh, std::uint32_t Index) const {
+Vec3 MeshHierarchyBuilder::ReadBitangent(const ufbx_mesh& Mesh, std::uint32_t Index) const {
     if (Mesh.vertex_bitangent.exists) {
         const ufbx_vec3 Value{ ufbx_get_vertex_vec3(&Mesh.vertex_bitangent, Index) };
-        return ToGlmVec3(Value);
+        return ToVec3(Value);
     }
-    return glm::vec3{ 0.0f, 0.0f, 0.0f };
+    return Vec3{ 0.0f, 0.0f, 0.0f };
 }
 
-void MeshHierarchyBuilder::ReadBoneData(const ufbx_mesh& Mesh, std::uint32_t CornerIndex, glm::uvec4& OutIndices, glm::vec4& OutWeights) const {
-    OutIndices = glm::uvec4{ 0, 0, 0, 0 };
-    OutWeights = glm::vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+void MeshHierarchyBuilder::ReadBoneData(const ufbx_mesh& Mesh, std::uint32_t CornerIndex, UVec4& OutIndices, Vec4& OutWeights) const {
+    std::uint32_t Indices[4]{ 0, 0, 0, 0 };
+    float Weights[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
 
     if (Mesh.skin_deformers.count == 0) {
+        OutIndices = UVec4{ Indices[0], Indices[1], Indices[2], Indices[3] };
+        OutWeights = Vec4{ Weights[0], Weights[1], Weights[2], Weights[3] };
         return;
     }
 
     const ufbx_skin_deformer* Skin{ Mesh.skin_deformers.data[0] };
     if (Skin == nullptr) {
+        OutIndices = UVec4{ Indices[0], Indices[1], Indices[2], Indices[3] };
+        OutWeights = Vec4{ Weights[0], Weights[1], Weights[2], Weights[3] };
         return;
     }
 
     if (CornerIndex >= Mesh.vertex_indices.count) {
+        OutIndices = UVec4{ Indices[0], Indices[1], Indices[2], Indices[3] };
+        OutWeights = Vec4{ Weights[0], Weights[1], Weights[2], Weights[3] };
         return;
     }
 
     const std::uint32_t VertexIndex{ Mesh.vertex_indices.data[CornerIndex] };
     if (VertexIndex >= Skin->vertices.count) {
+        OutIndices = UVec4{ Indices[0], Indices[1], Indices[2], Indices[3] };
+        OutWeights = Vec4{ Weights[0], Weights[1], Weights[2], Weights[3] };
         return;
     }
 
     const ufbx_skin_vertex& SkinVertex{ Skin->vertices.data[VertexIndex] };
     const std::size_t WeightCount{ std::min<std::size_t>(SkinVertex.num_weights, 4) };
     if (WeightCount == 0) {
+        OutIndices = UVec4{ Indices[0], Indices[1], Indices[2], Indices[3] };
+        OutWeights = Vec4{ Weights[0], Weights[1], Weights[2], Weights[3] };
         return;
     }
 
@@ -163,58 +185,61 @@ void MeshHierarchyBuilder::ReadBoneData(const ufbx_mesh& Mesh, std::uint32_t Cor
             break;
         }
         const ufbx_skin_weight& Weight{ Skin->weights.data[WeightIndex] };
-        OutIndices[static_cast<int>(Index)] = Weight.cluster_index;
-        OutWeights[static_cast<int>(Index)] = static_cast<float>(Weight.weight);
-        WeightSum += OutWeights[static_cast<int>(Index)];
-
-        
+        Indices[Index] = Weight.cluster_index;
+        Weights[Index] = static_cast<float>(Weight.weight);
+        WeightSum += Weights[Index];
     }
 
     if (WeightSum > 0.0f) {
-        OutWeights /= WeightSum;
+        for (std::size_t Index{ 0 }; Index < WeightCount; ++Index) {
+            Weights[Index] = Weights[Index] / WeightSum;
+        }
     }
+
+    OutIndices = UVec4{ Indices[0], Indices[1], Indices[2], Indices[3] };
+    OutWeights = Vec4{ Weights[0], Weights[1], Weights[2], Weights[3] };
 }
 
 MeshHierarchyBuilder::PackedVertex MeshHierarchyBuilder::MakePackedVertex(const ufbx_mesh& Mesh, std::uint32_t CornerIndex) const {
     PackedVertex Packed{};
-    const glm::vec3 Position{ ReadPosition(Mesh, CornerIndex) };
-    const glm::vec3 Normal{ ReadNormal(Mesh, CornerIndex) };
-    const glm::vec4 Color{ ReadColor(Mesh, CornerIndex) };
-    const glm::vec3 Tangent{ ReadTangent(Mesh, CornerIndex) };
-    const glm::vec3 Bitangent{ ReadBitangent(Mesh, CornerIndex) };
-    glm::uvec4 BoneIndices{};
-    glm::vec4 BoneWeights{};
+    const Vec3 Position{ ReadPosition(Mesh, CornerIndex) };
+    const Vec3 Normal{ ReadNormal(Mesh, CornerIndex) };
+    const Vec4 Color{ ReadColor(Mesh, CornerIndex) };
+    const Vec3 Tangent{ ReadTangent(Mesh, CornerIndex) };
+    const Vec3 Bitangent{ ReadBitangent(Mesh, CornerIndex) };
+    UVec4 BoneIndices{};
+    Vec4 BoneWeights{};
     ReadBoneData(Mesh, CornerIndex, BoneIndices, BoneWeights);
 
-    Packed.Position[0] = Position.x;
-    Packed.Position[1] = Position.y;
-    Packed.Position[2] = Position.z;
-    Packed.Normal[0] = Normal.x;
-    Packed.Normal[1] = Normal.y;
-    Packed.Normal[2] = Normal.z;
-    Packed.Color[0] = Color.x;
-    Packed.Color[1] = Color.y;
-    Packed.Color[2] = Color.z;
-    Packed.Color[3] = Color.w;
-    Packed.Tangent[0] = Tangent.x;
-    Packed.Tangent[1] = Tangent.y;
-    Packed.Tangent[2] = Tangent.z;
-    Packed.Bitangent[0] = Bitangent.x;
-    Packed.Bitangent[1] = Bitangent.y;
-    Packed.Bitangent[2] = Bitangent.z;
-    Packed.BoneIndices[0] = BoneIndices.x;
-    Packed.BoneIndices[1] = BoneIndices.y;
-    Packed.BoneIndices[2] = BoneIndices.z;
-    Packed.BoneIndices[3] = BoneIndices.w;
-    Packed.BoneWeights[0] = BoneWeights.x;
-    Packed.BoneWeights[1] = BoneWeights.y;
-    Packed.BoneWeights[2] = BoneWeights.z;
-    Packed.BoneWeights[3] = BoneWeights.w;
+    Packed.Position[0] = Position.mX;
+    Packed.Position[1] = Position.mY;
+    Packed.Position[2] = Position.mZ;
+    Packed.Normal[0] = Normal.mX;
+    Packed.Normal[1] = Normal.mY;
+    Packed.Normal[2] = Normal.mZ;
+    Packed.Color[0] = Color.mX;
+    Packed.Color[1] = Color.mY;
+    Packed.Color[2] = Color.mZ;
+    Packed.Color[3] = Color.mW;
+    Packed.Tangent[0] = Tangent.mX;
+    Packed.Tangent[1] = Tangent.mY;
+    Packed.Tangent[2] = Tangent.mZ;
+    Packed.Bitangent[0] = Bitangent.mX;
+    Packed.Bitangent[1] = Bitangent.mY;
+    Packed.Bitangent[2] = Bitangent.mZ;
+    Packed.BoneIndices[0] = BoneIndices.mX;
+    Packed.BoneIndices[1] = BoneIndices.mY;
+    Packed.BoneIndices[2] = BoneIndices.mZ;
+    Packed.BoneIndices[3] = BoneIndices.mW;
+    Packed.BoneWeights[0] = BoneWeights.mX;
+    Packed.BoneWeights[1] = BoneWeights.mY;
+    Packed.BoneWeights[2] = BoneWeights.mZ;
+    Packed.BoneWeights[3] = BoneWeights.mW;
 
     for (std::size_t SetIndex{ 0 }; SetIndex < 4; ++SetIndex) {
-        const glm::vec2 TexCoord{ ReadTexCoord(Mesh, SetIndex, CornerIndex) };
-        Packed.TexCoord[SetIndex][0] = TexCoord.x;
-        Packed.TexCoord[SetIndex][1] = TexCoord.y;
+        const Vec2 TexCoord{ ReadTexCoord(Mesh, SetIndex, CornerIndex) };
+        Packed.TexCoord[SetIndex][0] = TexCoord.mX;
+        Packed.TexCoord[SetIndex][1] = TexCoord.mY;
     }
 
     return Packed;
@@ -252,15 +277,15 @@ void MeshHierarchyBuilder::AppendIndexedMeshUfbx(const ufbx_mesh& Mesh, VertexAt
 
     for (std::size_t VertexIndex{ 0 }; VertexIndex < UniqueVertexCount; ++VertexIndex) {
         const PackedVertex& Packed{ CornerVertices[VertexIndex] };
-        OutVertices.Positions.push_back(glm::vec3{ Packed.Position[0], Packed.Position[1], Packed.Position[2] });
-        OutVertices.Normals.push_back(glm::vec3{ Packed.Normal[0], Packed.Normal[1], Packed.Normal[2] });
-        OutVertices.Colors.push_back(glm::vec4{ Packed.Color[0], Packed.Color[1], Packed.Color[2], Packed.Color[3] });
-        OutVertices.Tangents.push_back(glm::vec3{ Packed.Tangent[0], Packed.Tangent[1], Packed.Tangent[2] });
-        OutVertices.Bitangents.push_back(glm::vec3{ Packed.Bitangent[0], Packed.Bitangent[1], Packed.Bitangent[2] });
-        OutVertices.BoneIndices.push_back(glm::uvec4{ Packed.BoneIndices[0], Packed.BoneIndices[1], Packed.BoneIndices[2], Packed.BoneIndices[3] });
-        OutVertices.BoneWeights.push_back(glm::vec4{ Packed.BoneWeights[0], Packed.BoneWeights[1], Packed.BoneWeights[2], Packed.BoneWeights[3] });
+        OutVertices.Positions.push_back(Vec3{ Packed.Position[0], Packed.Position[1], Packed.Position[2] });
+        OutVertices.Normals.push_back(Vec3{ Packed.Normal[0], Packed.Normal[1], Packed.Normal[2] });
+        OutVertices.Colors.push_back(Vec4{ Packed.Color[0], Packed.Color[1], Packed.Color[2], Packed.Color[3] });
+        OutVertices.Tangents.push_back(Vec3{ Packed.Tangent[0], Packed.Tangent[1], Packed.Tangent[2] });
+        OutVertices.Bitangents.push_back(Vec3{ Packed.Bitangent[0], Packed.Bitangent[1], Packed.Bitangent[2] });
+        OutVertices.BoneIndices.push_back(UVec4{ Packed.BoneIndices[0], Packed.BoneIndices[1], Packed.BoneIndices[2], Packed.BoneIndices[3] });
+        OutVertices.BoneWeights.push_back(Vec4{ Packed.BoneWeights[0], Packed.BoneWeights[1], Packed.BoneWeights[2], Packed.BoneWeights[3] });
         for (std::size_t SetIndex{ 0 }; SetIndex < 4; ++SetIndex) {
-            OutVertices.TexCoords[SetIndex].push_back(glm::vec2{ Packed.TexCoord[SetIndex][0], Packed.TexCoord[SetIndex][1] });
+            OutVertices.TexCoords[SetIndex].push_back(Vec2{ Packed.TexCoord[SetIndex][0], Packed.TexCoord[SetIndex][1] });
         }
     }
 

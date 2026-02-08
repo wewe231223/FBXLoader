@@ -37,19 +37,19 @@ namespace asset {
         };
 
     private:
-        static glm::vec3 ToGlmVec3(const ufbx_vec3& Value);
-        static glm::vec2 ToGlmVec2(const ufbx_vec2& Value);
-        static glm::vec4 ToGlmVec4(const ufbx_vec4& Value);
+        static Vec3 ToVec3(const ufbx_vec3& Value);
+        static Vec2 ToVec2(const ufbx_vec2& Value);
+        static Vec4 ToVec4(const ufbx_vec4& Value);
 
         PackedVertex MakePackedVertex(const ufbx_mesh& Mesh, std::uint32_t CornerIndex) const;
 
-        glm::vec3 ReadPosition(const ufbx_mesh& Mesh, std::uint32_t Index) const;
-        glm::vec3 ReadNormal(const ufbx_mesh& Mesh, std::uint32_t Index) const;
-        glm::vec2 ReadTexCoord(const ufbx_mesh& Mesh, std::size_t SetIndex, std::uint32_t Index) const;
-        glm::vec4 ReadColor(const ufbx_mesh& Mesh, std::uint32_t Index) const;
-        glm::vec3 ReadTangent(const ufbx_mesh& Mesh, std::uint32_t Index) const;
-        glm::vec3 ReadBitangent(const ufbx_mesh& Mesh, std::uint32_t Index) const;
-        void ReadBoneData(const ufbx_mesh& Mesh, std::uint32_t CornerIndex, glm::uvec4& OutIndices, glm::vec4& OutWeights) const;
+        Vec3 ReadPosition(const ufbx_mesh& Mesh, std::uint32_t Index) const;
+        Vec3 ReadNormal(const ufbx_mesh& Mesh, std::uint32_t Index) const;
+        Vec2 ReadTexCoord(const ufbx_mesh& Mesh, std::size_t SetIndex, std::uint32_t Index) const;
+        Vec4 ReadColor(const ufbx_mesh& Mesh, std::uint32_t Index) const;
+        Vec3 ReadTangent(const ufbx_mesh& Mesh, std::uint32_t Index) const;
+        Vec3 ReadBitangent(const ufbx_mesh& Mesh, std::uint32_t Index) const;
+        void ReadBoneData(const ufbx_mesh& Mesh, std::uint32_t CornerIndex, UVec4& OutIndices, Vec4& OutWeights) const;
 
         void AppendIndexedMeshUfbx(const ufbx_mesh& Mesh, VertexAttributes& OutVertices, std::vector<std::uint32_t>& OutIndices) const;
 

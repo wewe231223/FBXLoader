@@ -152,22 +152,22 @@ void AssetBinaryWriter::WriteVertexAttributes(const VertexAttributes& Attributes
     WriteVec4Array(Attributes.BoneWeights);
 }
 
-void AssetBinaryWriter::WriteVec2Array(std::span<const glm::vec2> Values) {
+void AssetBinaryWriter::WriteVec2Array(std::span<const Vec2> Values) {
     WriteUint64(static_cast<std::uint64_t>(Values.size()));
     WriteBytes(Values.data(), Values.size_bytes());
 }
 
-void AssetBinaryWriter::WriteVec3Array(std::span<const glm::vec3> Values) {
+void AssetBinaryWriter::WriteVec3Array(std::span<const Vec3> Values) {
     WriteUint64(static_cast<std::uint64_t>(Values.size()));
     WriteBytes(Values.data(), Values.size_bytes());
 }
 
-void AssetBinaryWriter::WriteVec4Array(std::span<const glm::vec4> Values) {
+void AssetBinaryWriter::WriteVec4Array(std::span<const Vec4> Values) {
     WriteUint64(static_cast<std::uint64_t>(Values.size()));
     WriteBytes(Values.data(), Values.size_bytes());
 }
 
-void AssetBinaryWriter::WriteUvec4Array(std::span<const glm::uvec4> Values) {
+void AssetBinaryWriter::WriteUvec4Array(std::span<const UVec4> Values) {
     WriteUint64(static_cast<std::uint64_t>(Values.size()));
     WriteBytes(Values.data(), Values.size_bytes());
 }
@@ -220,19 +220,19 @@ void AssetBinaryWriter::WriteBool(bool Value) {
     WriteUint8(Stored);
 }
 
-void AssetBinaryWriter::WriteVec2(const glm::vec2& Value) {
+void AssetBinaryWriter::WriteVec2(const Vec2& Value) {
     WriteBytes(&Value, sizeof(Value));
 }
 
-void AssetBinaryWriter::WriteVec3(const glm::vec3& Value) {
+void AssetBinaryWriter::WriteVec3(const Vec3& Value) {
     WriteBytes(&Value, sizeof(Value));
 }
 
-void AssetBinaryWriter::WriteVec4(const glm::vec4& Value) {
+void AssetBinaryWriter::WriteVec4(const Vec4& Value) {
     WriteBytes(&Value, sizeof(Value));
 }
 
-void AssetBinaryWriter::WriteMat4(const glm::mat4& Value) {
+void AssetBinaryWriter::WriteMat4(const Mat4& Value) {
     WriteBytes(&Value, sizeof(Value));
 }
 

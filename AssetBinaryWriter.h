@@ -78,10 +78,10 @@ namespace asset {
         void WriteNodes(const std::vector<const ModelNode*>& Nodes, const std::unordered_map<const ModelNode*, std::uint32_t>& NodeIndices);
         void WriteNode(const ModelNode& Node, const std::unordered_map<const ModelNode*, std::uint32_t>& NodeIndices);
         void WriteVertexAttributes(const VertexAttributes& Attributes);
-        void WriteVec2Array(std::span<const glm::vec2> Values);
-        void WriteVec3Array(std::span<const glm::vec3> Values);
-        void WriteVec4Array(std::span<const glm::vec4> Values);
-        void WriteUvec4Array(std::span<const glm::uvec4> Values);
+        void WriteVec2Array(std::span<const Vec2> Values);
+        void WriteVec3Array(std::span<const Vec3> Values);
+        void WriteVec4Array(std::span<const Vec4> Values);
+        void WriteUvec4Array(std::span<const UVec4> Values);
         void WriteUint32Array(std::span<const std::uint32_t> Values);
         void WriteUint64Array(std::span<const std::uint64_t> Values);
 
@@ -94,10 +94,10 @@ namespace asset {
         void WriteInt64(std::int64_t Value);
         void WriteFloat(float Value);
         void WriteBool(bool Value);
-        void WriteVec2(const glm::vec2& Value);
-        void WriteVec3(const glm::vec3& Value);
-        void WriteVec4(const glm::vec4& Value);
-        void WriteMat4(const glm::mat4& Value);
+        void WriteVec2(const Vec2& Value);
+        void WriteVec3(const Vec3& Value);
+        void WriteVec4(const Vec4& Value);
+        void WriteMat4(const Mat4& Value);
         void WriteBytes(const void* Data, std::size_t Size);
 
     private:

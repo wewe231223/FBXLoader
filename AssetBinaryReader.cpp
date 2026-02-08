@@ -136,35 +136,35 @@ void AssetBinaryReader::ReadVertexAttributes(VertexAttributes& Attributes) {
     Attributes.BoneWeights = ReadVec4Array();
 }
 
-std::vector<glm::vec2> AssetBinaryReader::ReadVec2Array() {
+std::vector<Vec2> AssetBinaryReader::ReadVec2Array() {
     const std::uint64_t Count{ ReadUint64() };
-    std::vector<glm::vec2> Values{};
+    std::vector<Vec2> Values{};
     Values.resize(static_cast<std::size_t>(Count));
-    ReadBytes(Values.data(), Values.size() * sizeof(glm::vec2));
+    ReadBytes(Values.data(), Values.size() * sizeof(Vec2));
     return Values;
 }
 
-std::vector<glm::vec3> AssetBinaryReader::ReadVec3Array() {
+std::vector<Vec3> AssetBinaryReader::ReadVec3Array() {
     const std::uint64_t Count{ ReadUint64() };
-    std::vector<glm::vec3> Values{};
+    std::vector<Vec3> Values{};
     Values.resize(static_cast<std::size_t>(Count));
-    ReadBytes(Values.data(), Values.size() * sizeof(glm::vec3));
+    ReadBytes(Values.data(), Values.size() * sizeof(Vec3));
     return Values;
 }
 
-std::vector<glm::vec4> AssetBinaryReader::ReadVec4Array() {
+std::vector<Vec4> AssetBinaryReader::ReadVec4Array() {
     const std::uint64_t Count{ ReadUint64() };
-    std::vector<glm::vec4> Values{};
+    std::vector<Vec4> Values{};
     Values.resize(static_cast<std::size_t>(Count));
-    ReadBytes(Values.data(), Values.size() * sizeof(glm::vec4));
+    ReadBytes(Values.data(), Values.size() * sizeof(Vec4));
     return Values;
 }
 
-std::vector<glm::uvec4> AssetBinaryReader::ReadUvec4Array() {
+std::vector<UVec4> AssetBinaryReader::ReadUvec4Array() {
     const std::uint64_t Count{ ReadUint64() };
-    std::vector<glm::uvec4> Values{};
+    std::vector<UVec4> Values{};
     Values.resize(static_cast<std::size_t>(Count));
-    ReadBytes(Values.data(), Values.size() * sizeof(glm::uvec4));
+    ReadBytes(Values.data(), Values.size() * sizeof(UVec4));
     return Values;
 }
 
@@ -241,26 +241,26 @@ bool AssetBinaryReader::ReadBool() {
     return Value != 0;
 }
 
-glm::vec2 AssetBinaryReader::ReadVec2() {
-    glm::vec2 Value{};
+Vec2 AssetBinaryReader::ReadVec2() {
+    Vec2 Value{};
     ReadBytes(&Value, sizeof(Value));
     return Value;
 }
 
-glm::vec3 AssetBinaryReader::ReadVec3() {
-    glm::vec3 Value{};
+Vec3 AssetBinaryReader::ReadVec3() {
+    Vec3 Value{};
     ReadBytes(&Value, sizeof(Value));
     return Value;
 }
 
-glm::vec4 AssetBinaryReader::ReadVec4() {
-    glm::vec4 Value{};
+Vec4 AssetBinaryReader::ReadVec4() {
+    Vec4 Value{};
     ReadBytes(&Value, sizeof(Value));
     return Value;
 }
 
-glm::mat4 AssetBinaryReader::ReadMat4() {
-    glm::mat4 Value{};
+Mat4 AssetBinaryReader::ReadMat4() {
+    Mat4 Value{};
     ReadBytes(&Value, sizeof(Value));
     return Value;
 }

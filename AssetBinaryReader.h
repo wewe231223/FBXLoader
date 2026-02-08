@@ -76,10 +76,10 @@ namespace asset {
         void ReadModelResult(ModelResult& Result);
         void ReadNodes(ModelResult& Result, std::uint64_t NodeCount, std::vector<ModelNode*>& Nodes);
         void ReadVertexAttributes(VertexAttributes& Attributes);
-        std::vector<glm::vec2> ReadVec2Array();
-        std::vector<glm::vec3> ReadVec3Array();
-        std::vector<glm::vec4> ReadVec4Array();
-        std::vector<glm::uvec4> ReadUvec4Array();
+        std::vector<Vec2> ReadVec2Array();
+        std::vector<Vec3> ReadVec3Array();
+        std::vector<Vec4> ReadVec4Array();
+        std::vector<UVec4> ReadUvec4Array();
         std::vector<std::uint32_t> ReadUint32Array();
         std::vector<std::uint64_t> ReadUint64Array();
 
@@ -92,10 +92,10 @@ namespace asset {
         std::int64_t ReadInt64();
         float ReadFloat();
         bool ReadBool();
-        glm::vec2 ReadVec2();
-        glm::vec3 ReadVec3();
-        glm::vec4 ReadVec4();
-        glm::mat4 ReadMat4();
+        Vec2 ReadVec2();
+        Vec3 ReadVec3();
+        Vec4 ReadVec4();
+        Mat4 ReadMat4();
         void ReadBytes(void* Data, std::size_t Size);
 
     private:
