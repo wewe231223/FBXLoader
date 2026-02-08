@@ -48,6 +48,27 @@ namespace asset {
         void Resize(std::size_t Count);
     };
 
+
+	enum MaterialType : std::uint8_t {
+		DiffuseColor, 
+        DiffuseTexture, 
+        // TODO ... 
+	};
+
+    struct MaterialMap {
+        // TODO ... 
+    };
+
+    struct MaterialProperty {
+		MaterialType Type;
+        MaterialMap Data; 
+    };
+
+    struct Material {
+		std::vector<MaterialProperty> Properties;
+    };
+
+
     struct AssetError final : public std::runtime_error {
     public:
         using std::runtime_error::runtime_error;
