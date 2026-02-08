@@ -50,6 +50,9 @@
     <ClCompile Include="TextRenderer.cpp">
       <Filter>viewer</Filter>
     </ClCompile>
+    <ClCompile Include="MaterialVisitor.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ufbx">
@@ -113,6 +116,9 @@
     </ClInclude>
     <ClInclude Include="TextRenderer.h">
       <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialVisitor.h">
+      <Filter>Loader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -49,14 +49,203 @@ namespace asset {
     };
 
 
-	enum MaterialType : std::uint8_t {
-		DiffuseColor, 
-        DiffuseTexture, 
-        // TODO ... 
-	};
+    enum class MaterialType : std::uint16_t {
+        DiffuseFactor,
+        DiffuseFactorMap,
+        DiffuseColor,
+        DiffuseColorMap,
+        SpecularFactor,
+        SpecularFactorMap,
+        SpecularColor,
+        SpecularColorMap,
+        SpecularExponent,
+        SpecularExponentMap,
+        ReflectionFactor,
+        ReflectionFactorMap,
+        ReflectionColor,
+        ReflectionColorMap,
+        TransparencyFactor,
+        TransparencyFactorMap,
+        TransparencyColor,
+        TransparencyColorMap,
+        EmissionFactor,
+        EmissionFactorMap,
+        EmissionColor,
+        EmissionColorMap,
+        AmbientFactor,
+        AmbientFactorMap,
+        AmbientColor,
+        AmbientColorMap,
+        NormalMap,
+        NormalMapMap,
+        Bump,
+        BumpMap,
+        BumpFactor,
+        BumpFactorMap,
+        DisplacementFactor,
+        DisplacementFactorMap,
+        Displacement,
+        DisplacementMap,
+        VectorDisplacementFactor,
+        VectorDisplacementFactorMap,
+        VectorDisplacement,
+        VectorDisplacementMap,
+        BaseFactor,
+        BaseFactorMap,
+        BaseColor,
+        BaseColorMap,
+        Roughness,
+        RoughnessMap,
+        Metalness,
+        MetalnessMap,
+        DiffuseRoughness,
+        DiffuseRoughnessMap,
+        SpecularFactorPbr,
+        SpecularFactorPbrMap,
+        SpecularColorPbr,
+        SpecularColorPbrMap,
+        SpecularIor,
+        SpecularIorMap,
+        SpecularAnisotropy,
+        SpecularAnisotropyMap,
+        SpecularRotation,
+        SpecularRotationMap,
+        TransmissionFactor,
+        TransmissionFactorMap,
+        TransmissionColor,
+        TransmissionColorMap,
+        TransmissionDepth,
+        TransmissionDepthMap,
+        TransmissionScatter,
+        TransmissionScatterMap,
+        TransmissionScatterAnisotropy,
+        TransmissionScatterAnisotropyMap,
+        TransmissionDispersion,
+        TransmissionDispersionMap,
+        TransmissionRoughness,
+        TransmissionRoughnessMap,
+        TransmissionExtraRoughness,
+        TransmissionExtraRoughnessMap,
+        TransmissionPriority,
+        TransmissionPriorityMap,
+        TransmissionEnableInAov,
+        TransmissionEnableInAovMap,
+        SubsurfaceFactor,
+        SubsurfaceFactorMap,
+        SubsurfaceColor,
+        SubsurfaceColorMap,
+        SubsurfaceRadius,
+        SubsurfaceRadiusMap,
+        SubsurfaceScale,
+        SubsurfaceScaleMap,
+        SubsurfaceAnisotropy,
+        SubsurfaceAnisotropyMap,
+        SubsurfaceTintColor,
+        SubsurfaceTintColorMap,
+        SubsurfaceType,
+        SubsurfaceTypeMap,
+        SheenFactor,
+        SheenFactorMap,
+        SheenColor,
+        SheenColorMap,
+        SheenRoughness,
+        SheenRoughnessMap,
+        CoatFactor,
+        CoatFactorMap,
+        CoatColor,
+        CoatColorMap,
+        CoatRoughness,
+        CoatRoughnessMap,
+        CoatIor,
+        CoatIorMap,
+        CoatAnisotropy,
+        CoatAnisotropyMap,
+        CoatRotation,
+        CoatRotationMap,
+        CoatNormal,
+        CoatNormalMap,
+        CoatAffectBaseColor,
+        CoatAffectBaseColorMap,
+        CoatAffectBaseRoughness,
+        CoatAffectBaseRoughnessMap,
+        ThinFilmFactor,
+        ThinFilmFactorMap,
+        ThinFilmThickness,
+        ThinFilmThicknessMap,
+        ThinFilmIor,
+        ThinFilmIorMap,
+        EmissionFactorPbr,
+        EmissionFactorPbrMap,
+        EmissionColorPbr,
+        EmissionColorPbrMap,
+        Opacity,
+        OpacityMap,
+        IndirectDiffuse,
+        IndirectDiffuseMap,
+        IndirectSpecular,
+        IndirectSpecularMap,
+        NormalMapPbr,
+        NormalMapPbrMap,
+        TangentMap,
+        TangentMapMap,
+        DisplacementMapPbr,
+        DisplacementMapPbrMap,
+        MatteFactor,
+        MatteFactorMap,
+        MatteColor,
+        MatteColorMap,
+        AmbientOcclusion,
+        AmbientOcclusionMap,
+        Glossiness,
+        GlossinessMap,
+        CoatGlossiness,
+        CoatGlossinessMap,
+        TransmissionGlossiness,
+        TransmissionGlossinessMap,
+    };
 
-    struct MaterialMap {
-        // TODO ... 
+    enum class MaterialMapKind : std::uint8_t {
+        None,
+        Real,
+        Vec2,
+        Vec3,
+        Vec4,
+        Int,
+        Bool,
+        String,
+    };
+
+    struct MaterialMap final {
+    public:
+        MaterialMap();
+        explicit MaterialMap(float Value);
+        explicit MaterialMap(std::int64_t Value);
+        explicit MaterialMap(bool Value);
+        explicit MaterialMap(const glm::vec2& Value);
+        explicit MaterialMap(const glm::vec3& Value);
+        explicit MaterialMap(const glm::vec4& Value);
+        explicit MaterialMap(std::string Value);
+
+        MaterialMapKind GetKind() const;
+        float GetReal() const;
+        std::int64_t GetInt() const;
+        bool GetBool() const;
+        glm::vec2 GetVec2() const;
+        glm::vec3 GetVec3() const;
+        glm::vec4 GetVec4() const;
+        const std::string& GetString() const;
+
+    private:
+        MaterialMapKind mKind{ MaterialMapKind::None };
+        union {
+            float mReal;
+            std::int64_t mInt;
+            bool mBool;
+            float mVec2[2];
+            float mVec3[3];
+            float mVec4[4];
+        } mValue;
+        std::string mString{};
     };
 
     struct MaterialProperty {
