@@ -2,6 +2,12 @@
 
 #include <cstdint>
 
+#if __has_include("SimpleMath.h")
+    #define _DIRECTX_MATH_ENABLE
+    #include "SimpleMath.h"
+    #pragma comment(lib, "DirectXTK12.lib")
+#endif 
+
 namespace DirectX::SimpleMath {
     struct Vector2;
     struct Vector3;
@@ -62,9 +68,12 @@ namespace asset {
         float mValue[4][4];
     };
 
+#ifdef _DIRECTX_MATH_ENABLE
     DirectX::SimpleMath::Vector2 ToSimpleMath(const Vec2& Value);
     DirectX::SimpleMath::Vector3 ToSimpleMath(const Vec3& Value);
     DirectX::SimpleMath::Vector4 ToSimpleMath(const Vec4& Value);
     DirectX::SimpleMath::Vector4 ToSimpleMath(const UVec4& Value);
     DirectX::SimpleMath::Matrix ToSimpleMath(const Mat4& Value);
+#endif 
+
 }
