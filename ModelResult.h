@@ -27,11 +27,11 @@ namespace asset {
         Id GetId() const;
         const std::string& GetName() const;
 
-        const glm::mat4& GetNodeToParent() const;
-        void SetNodeToParent(const glm::mat4& NodeToParent);
+        const Mat4& GetNodeToParent() const;
+        void SetNodeToParent(const Mat4& NodeToParent);
 
-        const glm::mat4& GetGeometryToNode() const;
-        void SetGeometryToNode(const glm::mat4& GeometryToNode);
+        const Mat4& GetGeometryToNode() const;
+        void SetGeometryToNode(const Mat4& GeometryToNode);
 
         ModelNode* GetParent() const;
         const std::vector<ModelNode*>& GetChildren() const;
@@ -51,8 +51,8 @@ namespace asset {
         Id mId{ 0 };
 
         std::string mName{};
-        glm::mat4 mNodeToParent{ 1.0f };
-        glm::mat4 mGeometryToNode{ 1.0f };
+        Mat4 mNodeToParent{ 1.0f };
+        Mat4 mGeometryToNode{ 1.0f };
 
         ModelNode* mParent{ nullptr };
         std::vector<ModelNode*> mChildren{};

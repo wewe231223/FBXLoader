@@ -6,8 +6,8 @@ namespace asset {
     struct NodeVisitContext final {
     public:
         const ufbx_node* mParent{ nullptr };
-        glm::mat4 mNodeToParent{ 1.0f };
-        glm::mat4 mGeometryToNode{ 1.0f };
+        Mat4 mNodeToParent{ 1.0f };
+        Mat4 mGeometryToNode{ 1.0f };
     };
 
     class ISceneNodeVisitor {

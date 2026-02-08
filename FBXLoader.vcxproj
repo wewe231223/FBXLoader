@@ -34,6 +34,7 @@
     <ClCompile Include="MeshHierarchyBuilder.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ModelResult.cpp" />
+    <ClCompile Include="NumericTypes.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
@@ -41,6 +42,7 @@
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="ufbx.c" />
     <ClCompile Include="UfbxAssetLoader.cpp" />
+    <ClCompile Include="ViewerMath.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -56,6 +58,7 @@
     <ClInclude Include="MaterialVisitor.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelResult.h" />
+    <ClInclude Include="NumericTypes.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="SceneVisitor.h" />
     <ClInclude Include="Shader.h" />
@@ -64,6 +67,7 @@
     <ClInclude Include="Timer.h" />
     <ClInclude Include="ufbx.h" />
     <ClInclude Include="UfbxAssetLoader.h" />
+    <ClInclude Include="ViewerMath.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

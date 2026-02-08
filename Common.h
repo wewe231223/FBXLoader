@@ -17,12 +17,8 @@
 #include <new>
 #include <cassert>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "ufbx.h"
+#include "NumericTypes.h"
 
 namespace asset {
     enum class GraphicsAPI : std::uint8_t {
@@ -32,14 +28,14 @@ namespace asset {
 
     struct VertexAttributes final {
     public:
-        std::vector<glm::vec3> Positions{};
-        std::vector<glm::vec3> Normals{};
-        std::array<std::vector<glm::vec2>, 4> TexCoords{};
-        std::vector<glm::vec4> Colors{};
-        std::vector<glm::vec3> Tangents{};
-        std::vector<glm::vec3> Bitangents{};
-        std::vector<glm::uvec4> BoneIndices{};
-        std::vector<glm::vec4> BoneWeights{};
+        std::vector<Vec3> Positions{};
+        std::vector<Vec3> Normals{};
+        std::array<std::vector<Vec2>, 4> TexCoords{};
+        std::vector<Vec4> Colors{};
+        std::vector<Vec3> Tangents{};
+        std::vector<Vec3> Bitangents{};
+        std::vector<UVec4> BoneIndices{};
+        std::vector<Vec4> BoneWeights{};
 
         std::size_t VertexCount() const;
         bool Empty() const;
@@ -224,18 +220,18 @@ namespace asset {
         explicit MaterialMap(float Value);
         explicit MaterialMap(std::int64_t Value);
         explicit MaterialMap(bool Value);
-        explicit MaterialMap(const glm::vec2& Value);
-        explicit MaterialMap(const glm::vec3& Value);
-        explicit MaterialMap(const glm::vec4& Value);
+        explicit MaterialMap(const Vec2& Value);
+        explicit MaterialMap(const Vec3& Value);
+        explicit MaterialMap(const Vec4& Value);
         explicit MaterialMap(std::string Value);
 
         MaterialMapKind GetKind() const;
         float GetReal() const;
         std::int64_t GetInt() const;
         bool GetBool() const;
-        glm::vec2 GetVec2() const;
-        glm::vec3 GetVec3() const;
-        glm::vec4 GetVec4() const;
+        Vec2 GetVec2() const;
+        Vec3 GetVec3() const;
+        Vec4 GetVec4() const;
         const std::string& GetString() const;
 
     private:

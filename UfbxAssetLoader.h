@@ -39,7 +39,7 @@ namespace asset {
         void LoadAndTraverse(std::string_view FilePath, std::span<ISceneNodeVisitor* const> Visitors);
 
     private:
-        static glm::mat4 ToGlmMat4(const ufbx_matrix& Matrix);
+        static Mat4 ToMat4(const ufbx_matrix& Matrix);
         void TraverseNode(const ufbx_scene& Scene, const ufbx_node& Node, const ufbx_node* Parent, std::span<ISceneNodeVisitor* const> Visitors);
 
     private:

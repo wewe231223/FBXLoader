@@ -7,16 +7,16 @@
 using namespace asset;
 
 namespace {
-    glm::vec2 ToVec2(const ufbx_vec2& Value) {
-        return glm::vec2{ static_cast<float>(Value.x), static_cast<float>(Value.y) };
+    Vec2 ToVec2(const ufbx_vec2& Value) {
+        return Vec2{ static_cast<float>(Value.x), static_cast<float>(Value.y) };
     }
 
-    glm::vec3 ToVec3(const ufbx_vec3& Value) {
-        return glm::vec3{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z) };
+    Vec3 ToVec3(const ufbx_vec3& Value) {
+        return Vec3{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z) };
     }
 
-    glm::vec4 ToVec4(const ufbx_vec4& Value) {
-        return glm::vec4{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z), static_cast<float>(Value.w) };
+    Vec4 ToVec4(const ufbx_vec4& Value) {
+        return Vec4{ static_cast<float>(Value.x), static_cast<float>(Value.y), static_cast<float>(Value.z), static_cast<float>(Value.w) };
     }
 
     std::string ToString(const ufbx_string& Value) {

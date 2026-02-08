@@ -29,31 +29,31 @@ MaterialMap::MaterialMap(bool Value)
     mValue.mBool = Value;
 }
 
-MaterialMap::MaterialMap(const glm::vec2& Value)
+MaterialMap::MaterialMap(const Vec2& Value)
     : mKind{ MaterialMapKind::Vec2 }
     , mValue{}
     , mString{} {
-    mValue.mVec2[0] = Value.x;
-    mValue.mVec2[1] = Value.y;
+    mValue.mVec2[0] = Value.mX;
+    mValue.mVec2[1] = Value.mY;
 }
 
-MaterialMap::MaterialMap(const glm::vec3& Value)
+MaterialMap::MaterialMap(const Vec3& Value)
     : mKind{ MaterialMapKind::Vec3 }
     , mValue{}
     , mString{} {
-    mValue.mVec3[0] = Value.x;
-    mValue.mVec3[1] = Value.y;
-    mValue.mVec3[2] = Value.z;
+    mValue.mVec3[0] = Value.mX;
+    mValue.mVec3[1] = Value.mY;
+    mValue.mVec3[2] = Value.mZ;
 }
 
-MaterialMap::MaterialMap(const glm::vec4& Value)
+MaterialMap::MaterialMap(const Vec4& Value)
     : mKind{ MaterialMapKind::Vec4 }
     , mValue{}
     , mString{} {
-    mValue.mVec4[0] = Value.x;
-    mValue.mVec4[1] = Value.y;
-    mValue.mVec4[2] = Value.z;
-    mValue.mVec4[3] = Value.w;
+    mValue.mVec4[0] = Value.mX;
+    mValue.mVec4[1] = Value.mY;
+    mValue.mVec4[2] = Value.mZ;
+    mValue.mVec4[3] = Value.mW;
 }
 
 MaterialMap::MaterialMap(std::string Value)
@@ -78,16 +78,16 @@ bool MaterialMap::GetBool() const {
     return mValue.mBool;
 }
 
-glm::vec2 MaterialMap::GetVec2() const {
-    return glm::vec2{ mValue.mVec2[0], mValue.mVec2[1] };
+Vec2 MaterialMap::GetVec2() const {
+    return Vec2{ mValue.mVec2[0], mValue.mVec2[1] };
 }
 
-glm::vec3 MaterialMap::GetVec3() const {
-    return glm::vec3{ mValue.mVec3[0], mValue.mVec3[1], mValue.mVec3[2] };
+Vec3 MaterialMap::GetVec3() const {
+    return Vec3{ mValue.mVec3[0], mValue.mVec3[1], mValue.mVec3[2] };
 }
 
-glm::vec4 MaterialMap::GetVec4() const {
-    return glm::vec4{ mValue.mVec4[0], mValue.mVec4[1], mValue.mVec4[2], mValue.mVec4[3] };
+Vec4 MaterialMap::GetVec4() const {
+    return Vec4{ mValue.mVec4[0], mValue.mVec4[1], mValue.mVec4[2], mValue.mVec4[3] };
 }
 
 const std::string& MaterialMap::GetString() const {
@@ -110,7 +110,7 @@ void VertexAttributes::Reserve(std::size_t Count) {
     Bitangents.reserve(Count);
     BoneIndices.reserve(Count);
     BoneWeights.reserve(Count);
-    for (std::vector<glm::vec2>& Set : TexCoords) {
+    for (std::vector<Vec2>& Set : TexCoords) {
         Set.reserve(Count);
     }
 }
@@ -123,7 +123,7 @@ void VertexAttributes::Resize(std::size_t Count) {
     Bitangents.resize(Count);
     BoneIndices.resize(Count);
     BoneWeights.resize(Count);
-    for (std::vector<glm::vec2>& Set : TexCoords) {
+    for (std::vector<Vec2>& Set : TexCoords) {
         Set.resize(Count);
     }
 }
