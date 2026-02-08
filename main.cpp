@@ -401,7 +401,7 @@ int main() {
             if (!Dropped.empty() && !Models.empty()) {
                 const asset::Model::Bounds& Bounds{ Models[0].first.GetBounds() };
                 const float Radius{ Models[0].first.GetBoundingSphereRadius() };
-                CameraInstance.FrameBounds(Bounds.Center(), Radius, 1.25f);
+                //CameraInstance.FrameBounds(Bounds.Center(), Radius, 1.25f);
             }
         }
 
