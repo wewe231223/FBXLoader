@@ -2,6 +2,98 @@
 
 using namespace asset;
 
+MaterialMap::MaterialMap()
+    : mKind{ MaterialMapKind::None }
+    , mValue{}
+    , mString{} {
+}
+
+MaterialMap::MaterialMap(float Value)
+    : mKind{ MaterialMapKind::Real }
+    , mValue{}
+    , mString{} {
+    mValue.mReal = Value;
+}
+
+MaterialMap::MaterialMap(std::int64_t Value)
+    : mKind{ MaterialMapKind::Int }
+    , mValue{}
+    , mString{} {
+    mValue.mInt = Value;
+}
+
+MaterialMap::MaterialMap(bool Value)
+    : mKind{ MaterialMapKind::Bool }
+    , mValue{}
+    , mString{} {
+    mValue.mBool = Value;
+}
+
+MaterialMap::MaterialMap(const glm::vec2& Value)
+    : mKind{ MaterialMapKind::Vec2 }
+    , mValue{}
+    , mString{} {
+    mValue.mVec2[0] = Value.x;
+    mValue.mVec2[1] = Value.y;
+}
+
+MaterialMap::MaterialMap(const glm::vec3& Value)
+    : mKind{ MaterialMapKind::Vec3 }
+    , mValue{}
+    , mString{} {
+    mValue.mVec3[0] = Value.x;
+    mValue.mVec3[1] = Value.y;
+    mValue.mVec3[2] = Value.z;
+}
+
+MaterialMap::MaterialMap(const glm::vec4& Value)
+    : mKind{ MaterialMapKind::Vec4 }
+    , mValue{}
+    , mString{} {
+    mValue.mVec4[0] = Value.x;
+    mValue.mVec4[1] = Value.y;
+    mValue.mVec4[2] = Value.z;
+    mValue.mVec4[3] = Value.w;
+}
+
+MaterialMap::MaterialMap(std::string Value)
+    : mKind{ MaterialMapKind::String }
+    , mValue{}
+    , mString{ std::move(Value) } {
+}
+
+MaterialMapKind MaterialMap::GetKind() const {
+    return mKind;
+}
+
+float MaterialMap::GetReal() const {
+    return mValue.mReal;
+}
+
+std::int64_t MaterialMap::GetInt() const {
+    return mValue.mInt;
+}
+
+bool MaterialMap::GetBool() const {
+    return mValue.mBool;
+}
+
+glm::vec2 MaterialMap::GetVec2() const {
+    return glm::vec2{ mValue.mVec2[0], mValue.mVec2[1] };
+}
+
+glm::vec3 MaterialMap::GetVec3() const {
+    return glm::vec3{ mValue.mVec3[0], mValue.mVec3[1], mValue.mVec3[2] };
+}
+
+glm::vec4 MaterialMap::GetVec4() const {
+    return glm::vec4{ mValue.mVec4[0], mValue.mVec4[1], mValue.mVec4[2], mValue.mVec4[3] };
+}
+
+const std::string& MaterialMap::GetString() const {
+    return mString;
+}
+
 std::size_t VertexAttributes::VertexCount() const {
     return Positions.size();
 }
