@@ -10,6 +10,15 @@
     <ClCompile Include="Camera.cpp">
       <Filter>viewer</Filter>
     </ClCompile>
+    <ClCompile Include="AssetBinaryReader.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetBinaryWriter.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetBundle.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
     <ClCompile Include="Common.cpp">
       <Filter>viewer</Filter>
     </ClCompile>
@@ -53,6 +62,9 @@
     <ClCompile Include="MaterialVisitor.cpp">
       <Filter>Loader</Filter>
     </ClCompile>
+    <ClCompile Include="FbxAssetImporter.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ufbx">
@@ -74,6 +86,15 @@
     </ClInclude>
     <ClInclude Include="Camera.h">
       <Filter>viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetBinaryReader.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetBinaryWriter.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetBundle.h">
+      <Filter>Loader</Filter>
     </ClInclude>
     <ClInclude Include="Common.h">
       <Filter>viewer</Filter>
@@ -118,6 +139,9 @@
       <Filter>viewer</Filter>
     </ClInclude>
     <ClInclude Include="MaterialVisitor.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="FbxAssetImporter.h">
       <Filter>Loader</Filter>
     </ClInclude>
   </ItemGroup>
