@@ -144,9 +144,11 @@ void MeshHierarchyBuilder::ReadBoneData(const ufbx_mesh& Mesh, std::uint32_t Cor
             break;
         }
         const ufbx_skin_weight& Weight{ Skin->weights.data[WeightIndex] };
-        OutIndices[Index] = Weight.cluster_index;
-        OutWeights[Index] = static_cast<float>(Weight.weight);
-        WeightSum += OutWeights[Index];
+        OutIndices[static_cast<int>(Index)] = Weight.cluster_index;
+        OutWeights[static_cast<int>(Index)] = static_cast<float>(Weight.weight);
+        WeightSum += OutWeights[static_cast<int>(Index)];
+
+        
     }
 
     if (WeightSum > 0.0f) {

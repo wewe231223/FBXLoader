@@ -28,6 +28,7 @@
 #include "Texture.h"
 #include "Timer.h"
 #include "UfbxAssetLoader.h"
+#include "MaterialVisitor.h"
 
 namespace Fs = std::filesystem;
 
@@ -177,8 +178,10 @@ namespace {
         asset::UfbxAssetLoader Loader{ asset::GraphicsAPI::OpenGL };
         asset::ModelResult Result{};
         asset::MeshHierarchyBuilder Builder{ Result };
+		asset::MaterialVisitor MaterialVisitor{};
 
-        asset::ISceneNodeVisitor* Visitors[]{ &Builder };
+        asset::ISceneNodeVisitor* Visitors[]{ &Builder, &MaterialVisitor };
+
 
         if (FilePath.extension() != ".fbx" && FilePath.extension() != ".FBX") {
             std::cout << "Wrong file type - " << Path << "\nOnly .fbx files are supported.\n";
@@ -186,6 +189,17 @@ namespace {
         }
 
         Loader.LoadAndTraverse(Path, { Visitors });
+
+
+        std::vector<asset::Material> res( MaterialVisitor.GetMaterials() );
+        for (const auto& Mat : res) {
+            for (const auto& prop : Mat.Properties) {
+                if (prop.Data.GetKind() == asset::MaterialMapKind::String) {
+					std::cout << "Material Property: " << static_cast<int>(prop.Type) << " = " << prop.Data.GetString() << "\n";
+                }
+            }
+        }
+
 
         Result.ForEachDfs([&Models](asset::ModelNode& Node) {
             if (Node.Vertices().Empty()) {
