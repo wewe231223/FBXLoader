@@ -20,8 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="AssetBinaryReader.cpp" />
+    <ClCompile Include="AssetBinaryWriter.cpp" />
+    <ClCompile Include="AssetBundle.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="DataList.cpp" />
+    <ClCompile Include="FbxAssetImporter.cpp" />
     <ClCompile Include="FontAtlas.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="Input.cpp" />
@@ -40,9 +44,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="AssetBinaryReader.h" />
+    <ClInclude Include="AssetBinaryWriter.h" />
+    <ClInclude Include="AssetBundle.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="DataList.h" />
     <ClInclude Include="FontAtlas.h" />
+    <ClInclude Include="FbxAssetImporter.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="MeshHierarchyBuilder.h" />
     <ClInclude Include="MaterialVisitor.h" />

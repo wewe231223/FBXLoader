@@ -1,5 +1,6 @@
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -18,19 +19,19 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Camera.h"
+#include "AssetBinaryReader.h"
+#include "AssetBinaryWriter.h"
+#include "AssetBundle.h"
 #include "Common.h"
+#include "FbxAssetImporter.h"
 #include "FontAtlas.h"
 #include "Input.h"
-#include "MaterialVisitor.h"
-#include "MeshHierarchyBuilder.h"
 #include "Model.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "TextRenderer.h"
 #include "Texture.h"
 #include "Timer.h"
-#include "UfbxAssetLoader.h"
-#include "MaterialVisitor.h"
 
 namespace Fs = std::filesystem;
 
@@ -205,29 +206,36 @@ namespace {
         glViewport(0, 0, Width, Height);
     }
 
-    asset::ModelResult OnFileDropped(const std::string& Path, std::vector<ModelEntry>& Models, std::vector<asset::Material>& Materials, std::vector<asset::Texture2D>& MaterialTextures) {
-        Fs::path FilePath{ Path };
-
-        Models.clear();
-        Materials.clear();
-        MaterialTextures.clear();
-
-        asset::UfbxAssetLoader Loader{ asset::GraphicsAPI::OpenGL };
-        asset::ModelResult Result{};
-        asset::MaterialVisitor MaterialCollector{};
-        asset::MeshHierarchyBuilder Builder{ Result, &MaterialCollector.GetMaterialLookup() };
-
-        asset::ISceneNodeVisitor* Visitors[]{ &MaterialCollector, &Builder };
-
-
-        if (FilePath.extension() != ".fbx" && FilePath.extension() != ".FBX") {
-            std::cout << "Wrong file type - " << Path << "\nOnly .fbx files are supported.\n";
-            return Result;
+    std::vector<std::string> LoadListEntries(const std::string& ListPath) {
+        std::vector<std::string> Entries{};
+        std::ifstream Input{ ListPath };
+        if (!Input.is_open()) {
+            return Entries;
         }
+        std::string Line{};
+        while (std::getline(Input, Line)) {
+            if (!Line.empty()) {
+                Entries.push_back(Line);
+            }
+        }
+        return Entries;
+    }
 
-        Loader.LoadAndTraverse(Path, { Visitors });
+    Fs::path MakeBinaryPath(const Fs::path& FbxPath) {
+        Fs::path OutputPath{ FbxPath };
+        OutputPath.replace_extension(".fbxbin");
+        return OutputPath;
+    }
 
-        Materials = MaterialCollector.GetMaterials();
+    bool ConvertFbxToBinary(const Fs::path& FbxPath, const Fs::path& BinaryPath) {
+        asset::FbxAssetImporter Importer{ asset::GraphicsAPI::OpenGL };
+        asset::AssetBundle Bundle{ Importer.LoadFromFile(FbxPath.string()) };
+        asset::AssetBinaryWriter Writer{};
+        return Writer.WriteToFile(BinaryPath.string(), Bundle);
+    }
+
+    void BuildMaterialTextures(const std::vector<asset::Material>& Materials, std::vector<asset::Texture2D>& MaterialTextures) {
+        MaterialTextures.clear();
         MaterialTextures.resize(Materials.size());
         const Fs::path TextureRoot{ Fs::current_path() / "Asset" / "images" };
         for (std::size_t Index{ 0 }; Index < Materials.size(); ++Index) {
@@ -238,26 +246,53 @@ namespace {
             const Fs::path TexturePath{ TextureRoot / TextureName.value() };
             MaterialTextures[Index].LoadFromFile(TexturePath.string(), true);
         }
+    }
 
-        Result.ForEachDfs([&Models](asset::ModelNode& Node) {
-            if (Node.Vertices().Empty()) {
-                return;
+    void BuildModelEntries(const asset::ModelResult& Result, std::vector<ModelEntry>& Models) {
+        Models.clear();
+        const asset::ModelNode* Root{ Result.GetRoot() };
+        if (Root == nullptr) {
+            return;
+        }
+        std::vector<const asset::ModelNode*> Stack{};
+        Stack.push_back(Root);
+        while (!Stack.empty()) {
+            const asset::ModelNode* Node{ Stack.back() };
+            Stack.pop_back();
+            if (!Node->Vertices().Empty()) {
+                asset::Model ModelInstance{};
+                ModelInstance.Create(Node->Vertices(), Node->Indices(), GL_TRIANGLES);
+                ModelEntry Entry{};
+                Entry.Model = std::move(ModelInstance);
+                Entry.Node = Node;
+                const std::vector<std::size_t>& MaterialIndices{ Node->GetMaterialIndices() };
+                if (!MaterialIndices.empty()) {
+                    Entry.MaterialIndex = MaterialIndices.front();
+                }
+                Models.push_back(std::move(Entry));
             }
-
-            asset::Model ModelInstance{};
-            ModelInstance.Create(Node.Vertices(), Node.Indices(), GL_TRIANGLES);
-            ModelEntry Entry{};
-            Entry.Model = std::move(ModelInstance);
-            Entry.Node = &Node;
-            const std::vector<std::size_t>& MaterialIndices{ Node.GetMaterialIndices() };
-            if (!MaterialIndices.empty()) {
-                Entry.MaterialIndex = MaterialIndices.front();
+            const std::vector<asset::ModelNode*>& Children{ Node->GetChildren() };
+            for (std::size_t Index{ Children.size() }; Index > 0; --Index) {
+                Stack.push_back(Children[Index - 1]);
             }
-            Models.push_back(std::move(Entry));
-        });
+        }
+    }
 
+    bool LoadBinaryAsset(const std::string& Path, asset::AssetBundle& Bundle, std::vector<ModelEntry>& Models, std::vector<asset::Texture2D>& MaterialTextures) {
+        Fs::path FilePath{ Path };
+        if (FilePath.extension() != ".fbxbin") {
+            std::cout << "Wrong file type - " << Path << "\nOnly .fbxbin files are supported.\n";
+            return false;
+        }
+        asset::AssetBinaryReader Reader{};
+        if (!Reader.ReadFromFile(Path, Bundle)) {
+            std::cout << "Failed to load binary asset: " << Path << "\n";
+            return false;
+        }
+        BuildMaterialTextures(Bundle.GetMaterials(), MaterialTextures);
+        BuildModelEntries(Bundle.GetModelResult(), Models);
         std::cout << "[Drop] " << Path << "\n";
-        return Result;
+        return true;
     }
 
     glm::mat4 ComputeWorldMatrix(const asset::ModelNode& Node) {
@@ -338,7 +373,37 @@ namespace {
     }
 }
 
-int main() {
+int main(int ArgCount, char** ArgValues) {
+    if (ArgCount > 1) {
+        const std::string ListPath{ ArgValues[1] };
+        const std::vector<std::string> Entries{ LoadListEntries(ListPath) };
+        if (Entries.empty()) {
+            std::cout << "No entries found in list file: " << ListPath << "\n";
+        }
+        const Fs::path BaseDir{ Fs::path{ ListPath }.parent_path() };
+        for (std::size_t Index{ 0 }; Index < Entries.size(); ++Index) {
+            Fs::path FbxPath{ Entries[Index] };
+            if (FbxPath.is_relative()) {
+                FbxPath = BaseDir / FbxPath;
+            }
+            if (!Fs::exists(FbxPath)) {
+                std::cout << "Missing FBX file: " << FbxPath.string() << "\n";
+                continue;
+            }
+            const std::string Extension{ FbxPath.extension().string() };
+            if (Extension != ".fbx" && Extension != ".FBX") {
+                std::cout << "Skipping non-FBX entry: " << FbxPath.string() << "\n";
+                continue;
+            }
+            const Fs::path BinaryPath{ MakeBinaryPath(FbxPath) };
+            if (ConvertFbxToBinary(FbxPath, BinaryPath)) {
+                std::cout << "Binary saved: " << BinaryPath.string() << "\n";
+            }
+            else {
+                std::cout << "Binary save failed: " << BinaryPath.string() << "\n";
+            }
+        }
+    }
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         return 1;
@@ -438,9 +503,8 @@ int main() {
     asset::Model CubeModel{ CreateTexturedCube() };
 
     std::vector<ModelEntry> Models{};
-    std::vector<asset::Material> Materials{};
     std::vector<asset::Texture2D> MaterialTextures{};
-    asset::ModelResult Result{};
+    asset::AssetBundle Bundle{};
 
     glm::vec3 LightPosition{ 2.0f, 1.5f, 2.0f };
     glm::vec3 LightColor{ 1.0f, 1.0f, 1.0f };
@@ -456,7 +520,7 @@ int main() {
         {
             const auto Dropped{ InputHandler.ConsumeDroppedFiles() };
             for (const auto& Path : Dropped) {
-                Result = OnFileDropped(Path, Models, Materials, MaterialTextures);
+                LoadBinaryAsset(Path, Bundle, Models, MaterialTextures);
             }
 
         }
