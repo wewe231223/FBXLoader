@@ -74,6 +74,14 @@ std::vector<const ModelNode*> ModelNode::GetChildChain() const {
     return Chain;
 }
 
+void ModelNode::SetMaterialIndices(std::vector<std::size_t> Indices) {
+    mMaterialIndices = std::move(Indices);
+}
+
+const std::vector<std::size_t>& ModelNode::GetMaterialIndices() const {
+    return mMaterialIndices;
+}
+
 ModelResult::ModelResult() = default;
 
 ModelNode* ModelResult::GetRoot() const {

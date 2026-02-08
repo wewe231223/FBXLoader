@@ -44,6 +44,8 @@ namespace asset {
         const std::vector<std::uint32_t>& Indices() const;
 
         std::vector<const ModelNode*> GetChildChain() const;
+        void SetMaterialIndices(std::vector<std::size_t> Indices);
+        const std::vector<std::size_t>& GetMaterialIndices() const;
 
     private:
         Id mId{ 0 };
@@ -57,6 +59,7 @@ namespace asset {
 
         VertexAttributes mVertices{};
         std::vector<std::uint32_t> mIndices{};
+        std::vector<std::size_t> mMaterialIndices{};
     };
 
     class ModelResult final {

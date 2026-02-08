@@ -1,6 +1,7 @@
 #include <array>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@
 #include "Common.h"
 #include "FontAtlas.h"
 #include "Input.h"
+#include "MaterialVisitor.h"
 #include "MeshHierarchyBuilder.h"
 #include "Model.h"
 #include "Renderer.h"
@@ -47,6 +49,39 @@ namespace {
         Vertices.Bitangents.push_back(Bitangent);
         Vertices.BoneIndices.push_back(BoneIndices);
         Vertices.BoneWeights.push_back(BoneWeights);
+    }
+
+    struct ModelEntry final {
+    public:
+        asset::Model Model{};
+        const asset::ModelNode* Node{ nullptr };
+        std::optional<std::size_t> MaterialIndex{};
+    };
+
+    std::optional<std::string> FindMaterialTextureName(const asset::Material& MaterialData) {
+        const std::array<asset::MaterialType, 6> CandidateTypes{
+            asset::MaterialType::BaseColorMap,
+            asset::MaterialType::DiffuseColorMap,
+            asset::MaterialType::DiffuseFactorMap,
+            asset::MaterialType::EmissionColorMap,
+            asset::MaterialType::EmissionColorPbrMap,
+            asset::MaterialType::OpacityMap
+        };
+        for (const asset::MaterialType Type : CandidateTypes) {
+            for (const asset::MaterialProperty& Property : MaterialData.Properties) {
+                if (Property.Type != Type) {
+                    continue;
+                }
+                if (Property.Data.GetKind() != asset::MaterialMapKind::String) {
+                    continue;
+                }
+                const std::string& Name{ Property.Data.GetString() };
+                if (!Name.empty()) {
+                    return Name;
+                }
+            }
+        }
+        return std::nullopt;
     }
 
     asset::Model CreateAxisModel() {
@@ -170,17 +205,19 @@ namespace {
         glViewport(0, 0, Width, Height);
     }
 
-    asset::ModelResult OnFileDropped(const std::string& Path, std::vector<std::pair<asset::Model, const asset::ModelNode*>>& Models) {
+    asset::ModelResult OnFileDropped(const std::string& Path, std::vector<ModelEntry>& Models, std::vector<asset::Material>& Materials, std::vector<asset::Texture2D>& MaterialTextures) {
         Fs::path FilePath{ Path };
 
         Models.clear();
+        Materials.clear();
+        MaterialTextures.clear();
 
         asset::UfbxAssetLoader Loader{ asset::GraphicsAPI::OpenGL };
         asset::ModelResult Result{};
-        asset::MeshHierarchyBuilder Builder{ Result };
-		asset::MaterialVisitor MaterialVisitor{};
+        asset::MaterialVisitor MaterialCollector{};
+        asset::MeshHierarchyBuilder Builder{ Result, &MaterialCollector.GetMaterialLookup() };
 
-        asset::ISceneNodeVisitor* Visitors[]{ &Builder, &MaterialVisitor };
+        asset::ISceneNodeVisitor* Visitors[]{ &MaterialCollector, &Builder };
 
 
         if (FilePath.extension() != ".fbx" && FilePath.extension() != ".FBX") {
@@ -190,16 +227,17 @@ namespace {
 
         Loader.LoadAndTraverse(Path, { Visitors });
 
-
-        std::vector<asset::Material> res( MaterialVisitor.GetMaterials() );
-        for (const auto& Mat : res) {
-            for (const auto& prop : Mat.Properties) {
-                if (prop.Data.GetKind() == asset::MaterialMapKind::String) {
-					std::cout << "Material Property: " << static_cast<int>(prop.Type) << " = " << prop.Data.GetString() << "\n";
-                }
+        Materials = MaterialCollector.GetMaterials();
+        MaterialTextures.resize(Materials.size());
+        const Fs::path TextureRoot{ Fs::current_path() / "Asset" / "images" };
+        for (std::size_t Index{ 0 }; Index < Materials.size(); ++Index) {
+            std::optional<std::string> TextureName{ FindMaterialTextureName(Materials[Index]) };
+            if (!TextureName.has_value()) {
+                continue;
             }
+            const Fs::path TexturePath{ TextureRoot / TextureName.value() };
+            MaterialTextures[Index].LoadFromFile(TexturePath.string(), true);
         }
-
 
         Result.ForEachDfs([&Models](asset::ModelNode& Node) {
             if (Node.Vertices().Empty()) {
@@ -208,7 +246,14 @@ namespace {
 
             asset::Model ModelInstance{};
             ModelInstance.Create(Node.Vertices(), Node.Indices(), GL_TRIANGLES);
-            Models.emplace_back(std::move(ModelInstance), &Node);
+            ModelEntry Entry{};
+            Entry.Model = std::move(ModelInstance);
+            Entry.Node = &Node;
+            const std::vector<std::size_t>& MaterialIndices{ Node.GetMaterialIndices() };
+            if (!MaterialIndices.empty()) {
+                Entry.MaterialIndex = MaterialIndices.front();
+            }
+            Models.push_back(std::move(Entry));
         });
 
         std::cout << "[Drop] " << Path << "\n";
@@ -392,7 +437,9 @@ int main() {
     asset::Model AxisModel{ CreateAxisModel() };
     asset::Model CubeModel{ CreateTexturedCube() };
 
-    std::vector<std::pair<asset::Model, const asset::ModelNode*>> Models{};
+    std::vector<ModelEntry> Models{};
+    std::vector<asset::Material> Materials{};
+    std::vector<asset::Texture2D> MaterialTextures{};
     asset::ModelResult Result{};
 
     glm::vec3 LightPosition{ 2.0f, 1.5f, 2.0f };
@@ -409,13 +456,12 @@ int main() {
         {
             const auto Dropped{ InputHandler.ConsumeDroppedFiles() };
             for (const auto& Path : Dropped) {
-                Result = OnFileDropped(Path, Models);
+                Result = OnFileDropped(Path, Models, Materials, MaterialTextures);
             }
 
             if (!Dropped.empty() && !Models.empty()) {
                 const asset::Model::Bounds& Bounds{ Models[0].first.GetBounds() };
                 const float Radius{ Models[0].first.GetBoundingSphereRadius() };
-                //CameraInstance.FrameBounds(Bounds.Center(), Radius, 1.25f);
             }
         }
 
@@ -488,22 +534,37 @@ int main() {
         LitShader.SetFloat("uShininess", 64.0f);
         LitShader.SetInt("uAlbedo", 0);
 
-        if (HasTexture) {
-            Checker.Bind(0);
-        }
-        else {
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
-
         if (Models.empty()) {
+            if (HasTexture) {
+                Checker.Bind(0);
+            }
+            else {
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
             CubeModel.Draw();
         }
 
-        for (auto& Entry : Models) {
-            asset::Model& ModelInstance{ Entry.first };
-            const asset::ModelNode* Node{ Entry.second };
+        for (ModelEntry& Entry : Models) {
+            asset::Model& ModelInstance{ Entry.Model };
+            const asset::ModelNode* Node{ Entry.Node };
             const glm::mat4 ModelMatrix{ ComputeWorldMatrix(*Node) };
             LitShader.SetMat4("uModel", ModelMatrix);
+            bool BoundTexture{ false };
+            if (Entry.MaterialIndex.has_value()) {
+                const std::size_t MaterialIndex{ Entry.MaterialIndex.value() };
+                if (MaterialIndex < MaterialTextures.size() && MaterialTextures[MaterialIndex].Id() != 0) {
+                    MaterialTextures[MaterialIndex].Bind(0);
+                    BoundTexture = true;
+                }
+            }
+            if (!BoundTexture) {
+                if (HasTexture) {
+                    Checker.Bind(0);
+                }
+                else {
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                }
+            }
             ModelInstance.Draw();
         }
 

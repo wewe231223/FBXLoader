@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -26,6 +27,7 @@ namespace asset {
 
     private:
         std::vector<Material> mMaterials{};
+        std::unordered_map<const ufbx_material*, std::size_t> mMaterialLookup{};
         std::unordered_set<const ufbx_material*> mVisitedMaterials{};
     };
 }

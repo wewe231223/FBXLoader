@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 
 #include "ModelResult.h"
@@ -10,7 +11,7 @@
 namespace asset {
     class MeshHierarchyBuilder final : public ISceneNodeVisitor {
     public:
-        MeshHierarchyBuilder(ModelResult& OutResult);
+        explicit MeshHierarchyBuilder(ModelResult& OutResult, const std::unordered_map<const ufbx_material*, std::size_t>* MaterialLookup);
         ~MeshHierarchyBuilder();
 
         MeshHierarchyBuilder(const MeshHierarchyBuilder& Other) = delete;
@@ -55,5 +56,6 @@ namespace asset {
     private:
         ModelResult& mResult;
         std::vector<ModelNode*> mNodeStack{};
+        const std::unordered_map<const ufbx_material*, std::size_t>* mMaterialLookup{ nullptr };
     };
 }
