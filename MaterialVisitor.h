@@ -21,7 +21,7 @@ namespace asset {
         void OnNodeBegin(const ufbx_scene& Scene, const ufbx_node& Node, const NodeVisitContext& Context) override;
         void OnNodeEnd(const ufbx_scene& Scene, const ufbx_node& Node) override;
 
-        const std::vector<Material>& GetMaterials() const;
+        std::vector<Material>& GetMaterials();
         void Clear();
 
     private:
