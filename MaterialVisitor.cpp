@@ -184,7 +184,9 @@ void MaterialVisitor::OnNodeBegin(const ufbx_scene& Scene, const ufbx_node& Node
             continue;
         }
         mVisitedMaterials.insert(MaterialData);
+        std::size_t MaterialIndex{ mMaterials.size() };
         mMaterials.push_back(BuildMaterial(*MaterialData));
+        mMaterialLookup.insert({ MaterialData, MaterialIndex });
     }
 }
 
@@ -197,7 +199,12 @@ std::vector<Material>& MaterialVisitor::GetMaterials() {
     return mMaterials;
 }
 
+const std::unordered_map<const ufbx_material*, std::size_t>& MaterialVisitor::GetMaterialLookup() const {
+    return mMaterialLookup;
+}
+
 void MaterialVisitor::Clear() {
     mMaterials.clear();
+    mMaterialLookup.clear();
     mVisitedMaterials.clear();
 }
