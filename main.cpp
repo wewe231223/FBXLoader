@@ -459,10 +459,6 @@ int main() {
                 Result = OnFileDropped(Path, Models, Materials, MaterialTextures);
             }
 
-            if (!Dropped.empty() && !Models.empty()) {
-                const asset::Model::Bounds& Bounds{ Models[0].first.GetBounds() };
-                const float Radius{ Models[0].first.GetBoundingSphereRadius() };
-            }
         }
 
         if (InputHandler.KeyPressed(GLFW_KEY_ESCAPE)) {
@@ -529,7 +525,7 @@ int main() {
         LitShader.SetVec3("uCameraPos", CameraInstance.Position());
         LitShader.SetVec3("uLightPos", LightPosition);
         LitShader.SetVec3("uLightColor", LightColor);
-        LitShader.SetFloat("uAmbientStrength", 0.12f);
+        LitShader.SetFloat("uAmbientStrength", 0.25f);
         LitShader.SetFloat("uSpecStrength", 0.65f);
         LitShader.SetFloat("uShininess", 64.0f);
         LitShader.SetInt("uAlbedo", 0);

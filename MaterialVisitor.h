@@ -23,6 +23,7 @@ namespace asset {
         void OnNodeEnd(const ufbx_scene& Scene, const ufbx_node& Node) override;
 
         std::vector<Material>& GetMaterials();
+        const std::unordered_map<const ufbx_material*, std::size_t>& GetMaterialLookup() const;
         void Clear();
 
     private:
