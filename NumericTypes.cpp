@@ -73,6 +73,7 @@ namespace asset {
         return &mValue[0][0];
     }
 
+#ifdef _DIRECTX_MATH_ENABLE
     Vector2 ToSimpleMath(const Vec2& Value) {
         return Vector2{ Value.mX, Value.mY };
     }
@@ -109,4 +110,5 @@ namespace asset {
         result._44 = Value.mValue[3][3];
         return result;
     }
+#endif 
 }
