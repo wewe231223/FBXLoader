@@ -1,25 +1,50 @@
 /*
-Binary Format (v1):
-- Header: char[4] Magic = "FBXB", uint32 Version = 1
-- Materials: uint64 MaterialCount
-  - Material: uint8 PbrFlag, uint64 PropertyCount
-    - Property: uint16 Type, uint8 MapKind, Payload (by MapKind)
-      - None: no payload
-      - Real: float
-      - Int: int64
-      - Bool: uint8
-      - Vec2: float[2]
-      - Vec3: float[3]
-      - Vec4: float[4]
-      - String: uint64 Length, char[Length]
-- Nodes (DFS order): uint64 NodeCount
-  - Node: string Name, int32 ParentIndex (-1 root), mat4 NodeToParent, mat4 GeometryToNode
-    - VertexAttributes: for each attribute vector, uint64 Count + raw bytes
-      Positions(vec3), Normals(vec3), TexCoords[4](vec2), Colors(vec4),
-      Tangents(vec3), Bitangents(vec3), BoneIndices(uvec4), BoneWeights(vec4)
-    - Indices: uint64 Count + uint32[Count]
-    - MaterialIndices: uint64 Count + uint64[Count]
-*/
+ * ============================================================================
+ * FBXB BINARY FORMAT (v1) SPECIFICATION
+ * ============================================================================
+ *
+ * [ HEADER ]
+ * +----------+----------+---------------------------------------------------+
+ * | Magic    | char[4]  | "FBXB"                                            |
+ * | Version  | uint32   | 1                                                 |
+ * +----------+----------+---------------------------------------------------+
+ *
+ * [ MATERIALS ]
+ * +---------------+--------+------------------------------------------------+
+ * | MaterialCount | uint64 | Total number of materials                      |
+ * +---------------+--------+------------------------------------------------+
+ * | [ Material Block ] x MaterialCount                                      |
+ * |  +---------------+--------+---------------------------------------------+
+ * |  | PbrFlag       | uint8  | Physically Based Rendering flag             |
+ * |  | PropertyCount | uint64 | Number of properties in this material       |
+ * |  +---------------+--------+---------------------------------------------+
+ * |  | [ Property Block ] x PropertyCount                                   |
+ * |  |  +----------+--------+-----------------------------------------------+
+ * |  |  | Type     | uint16 | Property type identifier                     |
+ * |  |  | MapKind  | uint8  | 0:None, 1:Real(f32), 2:Int(i64), 3:Bool(u8),  |
+ * |  |  |          |        | 4:Vec2, 5:Vec3, 6:Vec4, 7:String(u64+char[])  |
+ * |  |  | Payload  | mixed  | (Data size varies based on MapKind)          |
+ * |  |  +----------+--------+-----------------------------------------------+
+ *
+ * [ NODES ] (DFS Order)
+ * +---------------+--------+------------------------------------------------+
+ * | NodeCount     | uint64 | Total number of nodes                          |
+ * +---------------+--------+------------------------------------------------+
+ * | [ Node Block ] x NodeCount                                              |
+ * |  +------------------+----------+----------------------------------------+
+ * |  | Name             | String   | (uint64 Length + char[Length])         |
+ * |  | ParentIndex      | int32    | -1 if root                             |
+ * |  | NodeToParent     | mat4     | 4x4 Transformation matrix              |
+ * |  | GeometryToNode   | mat4     | 4x4 Offset matrix                      |
+ * |  +------------------+----------+----------------------------------------+
+ * |  | VertexAttributes | (Nested) | For each attribute: uint64 Count + Raw |
+ * |  |                  |          | [Pos, Norm, UV[4], Col, Tan, Bitan,    |
+ * |  |                  |          |  BoneIdx, BoneWeight]                  |
+ * |  +------------------+----------+----------------------------------------+
+ * |  | Indices          | (Nested) | uint64 Count + uint32[Count]           |
+ * |  | MaterialIndices  | (Nested) | uint64 Count + uint64[Count]           |
+ * |  +------------------+----------+----------------------------------------+
+ */
 #pragma once
 
 #include <fstream>
