@@ -23,7 +23,7 @@ namespace asset {
         glm::mat4 Result{ 1.0f };
         for (std::size_t Row{ 0 }; Row < 4; ++Row) {
             for (std::size_t Col{ 0 }; Col < 4; ++Col) {
-                Result[Col][Row] = Value.mValue[Row][Col];
+                Result[static_cast<glm::length_t>(Col)][static_cast<glm::length_t>(Row)] = Value.mValue[static_cast<glm::length_t>(Row)][static_cast<glm::length_t>(Col)];
             }
         }
         return Result;
