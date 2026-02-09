@@ -5,7 +5,7 @@
 using namespace asset;
 
 namespace {
-    constexpr std::uint32_t FormatVersion{ 1 };
+    constexpr std::uint32_t FormatVersion{ 2 };
     constexpr char FormatMagic[4]{ 'F', 'B', 'X', 'B' };
 }
 
@@ -130,13 +130,7 @@ void AssetBinaryWriter::WriteNode(const ModelNode& Node, const std::unordered_ma
     WriteMat4(Node.GetGeometryToNode());
     WriteVertexAttributes(Node.Vertices());
     WriteUint32Array(Node.Indices());
-    const std::vector<std::size_t>& MaterialIndices{ Node.GetMaterialIndices() };
-    std::vector<std::uint64_t> Converted{};
-    Converted.reserve(MaterialIndices.size());
-    for (std::size_t Index{ 0 }; Index < MaterialIndices.size(); ++Index) {
-        Converted.push_back(static_cast<std::uint64_t>(MaterialIndices[Index]));
-    }
-    WriteUint64Array(Converted);
+    WriteSubMeshes(Node.GetSubMeshes());
 }
 
 void AssetBinaryWriter::WriteVertexAttributes(const VertexAttributes& Attributes) {
@@ -150,6 +144,15 @@ void AssetBinaryWriter::WriteVertexAttributes(const VertexAttributes& Attributes
     WriteVec3Array(Attributes.Bitangents);
     WriteUvec4Array(Attributes.BoneIndices);
     WriteVec4Array(Attributes.BoneWeights);
+}
+
+void AssetBinaryWriter::WriteSubMeshes(const std::vector<ModelNode::SubMesh>& SubMeshes) {
+    WriteUint64(static_cast<std::uint64_t>(SubMeshes.size()));
+    for (const ModelNode::SubMesh& SubMesh : SubMeshes) {
+        WriteUint64(static_cast<std::uint64_t>(SubMesh.IndexOffset));
+        WriteUint64(static_cast<std::uint64_t>(SubMesh.IndexCount));
+        WriteUint64(static_cast<std::uint64_t>(SubMesh.MaterialIndex));
+    }
 }
 
 void AssetBinaryWriter::WriteVec2Array(std::span<const Vec2> Values) {

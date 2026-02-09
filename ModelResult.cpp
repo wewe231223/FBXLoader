@@ -63,6 +63,14 @@ const std::vector<std::uint32_t>& ModelNode::Indices() const {
     return mIndices;
 }
 
+std::vector<ModelNode::SubMesh>& ModelNode::SubMeshes() {
+    return mSubMeshes;
+}
+
+const std::vector<ModelNode::SubMesh>& ModelNode::SubMeshes() const {
+    return mSubMeshes;
+}
+
 std::vector<const ModelNode*> ModelNode::GetChildChain() const {
     std::vector<const ModelNode*> Chain{};
     const ModelNode* Current{ this };
@@ -74,12 +82,12 @@ std::vector<const ModelNode*> ModelNode::GetChildChain() const {
     return Chain;
 }
 
-void ModelNode::SetMaterialIndices(std::vector<std::size_t> Indices) {
-    mMaterialIndices = std::move(Indices);
+void ModelNode::SetSubMeshes(std::vector<SubMesh> SubMeshes) {
+    mSubMeshes = std::move(SubMeshes);
 }
 
-const std::vector<std::size_t>& ModelNode::GetMaterialIndices() const {
-    return mMaterialIndices;
+const std::vector<ModelNode::SubMesh>& ModelNode::GetSubMeshes() const {
+    return mSubMeshes;
 }
 
 ModelResult::ModelResult() = default;

@@ -1,50 +1,3 @@
-/*
- * ============================================================================
- * FBXB BINARY FORMAT (v1) SPECIFICATION
- * ============================================================================
- *
- * [ HEADER ]
- * +----------+----------+---------------------------------------------------+
- * | Magic    | char[4]  | "FBXB"                                            |
- * | Version  | uint32   | 1                                                 |
- * +----------+----------+---------------------------------------------------+
- *
- * [ MATERIALS ]
- * +---------------+--------+------------------------------------------------+
- * | MaterialCount | uint64 | Total number of materials                      |
- * +---------------+--------+------------------------------------------------+
- * | [ Material Block ] x MaterialCount                                      |
- * |  +---------------+--------+---------------------------------------------+
- * |  | PbrFlag       | uint8  | Physically Based Rendering flag             |
- * |  | PropertyCount | uint64 | Number of properties in this material       |
- * |  +---------------+--------+---------------------------------------------+
- * |  | [ Property Block ] x PropertyCount                                   |
- * |  |  +----------+--------+-----------------------------------------------+
- * |  |  | Type     | uint16 | Property type identifier                     |
- * |  |  | MapKind  | uint8  | 0:None, 1:Real(f32), 2:Int(i64), 3:Bool(u8),  |
- * |  |  |          |        | 4:Vec2, 5:Vec3, 6:Vec4, 7:String(u64+char[])  |
- * |  |  | Payload  | mixed  | (Data size varies based on MapKind)          |
- * |  |  +----------+--------+-----------------------------------------------+
- *
- * [ NODES ] (DFS Order)
- * +---------------+--------+------------------------------------------------+
- * | NodeCount     | uint64 | Total number of nodes                          |
- * +---------------+--------+------------------------------------------------+
- * | [ Node Block ] x NodeCount                                              |
- * |  +------------------+----------+----------------------------------------+
- * |  | Name             | String   | (uint64 Length + char[Length])         |
- * |  | ParentIndex      | int32    | -1 if root                             |
- * |  | NodeToParent     | mat4     | 4x4 Transformation matrix              |
- * |  | GeometryToNode   | mat4     | 4x4 Offset matrix                      |
- * |  +------------------+----------+----------------------------------------+
- * |  | VertexAttributes | (Nested) | For each attribute: uint64 Count + Raw |
- * |  |                  |          | [Pos, Norm, UV[4], Col, Tan, Bitan,    |
- * |  |                  |          |  BoneIdx, BoneWeight]                  |
- * |  +------------------+----------+----------------------------------------+
- * |  | Indices          | (Nested) | uint64 Count + uint32[Count]           |
- * |  | MaterialIndices  | (Nested) | uint64 Count + uint64[Count]           |
- * |  +------------------+----------+----------------------------------------+
- */
 #pragma once
 
 #include <fstream>
@@ -76,6 +29,7 @@ namespace asset {
         void ReadModelResult(ModelResult& Result);
         void ReadNodes(ModelResult& Result, std::uint64_t NodeCount, std::vector<ModelNode*>& Nodes);
         void ReadVertexAttributes(VertexAttributes& Attributes);
+        std::vector<ModelNode::SubMesh> ReadSubMeshes();
         std::vector<Vec2> ReadVec2Array();
         std::vector<Vec3> ReadVec3Array();
         std::vector<Vec4> ReadVec4Array();
@@ -100,5 +54,6 @@ namespace asset {
 
     private:
         std::ifstream mStream{};
+        std::uint32_t mFormatVersion{ 0 };
     };
 }
