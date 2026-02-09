@@ -157,6 +157,17 @@ namespace asset {
         glBindVertexArray(0);
     }
 
+    void Model::DrawRange(std::size_t IndexOffset, std::size_t IndexCount) const {
+        if (IndexCount == 0) {
+            return;
+        }
+        glBindVertexArray(mVao);
+        const GLsizei Count{ static_cast<GLsizei>(IndexCount) };
+        const std::size_t OffsetBytes{ IndexOffset * sizeof(std::uint32_t) };
+        glDrawElements(mPrimitive, Count, GL_UNSIGNED_INT, reinterpret_cast<const void*>(OffsetBytes));
+        glBindVertexArray(0);
+    }
+
     GLenum Model::Primitive() const {
         return mPrimitive;
     }

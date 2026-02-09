@@ -1,12 +1,12 @@
 /*
  * ============================================================================
- * FBXB BINARY FORMAT (v1) SPECIFICATION
+ * FBXB BINARY FORMAT (v2) SPECIFICATION
  * ============================================================================
  *
  * [ HEADER ]
  * +----------+----------+---------------------------------------------------+
  * | Magic    | char[4]  | "FBXB"                                            |
- * | Version  | uint32   | 1                                                 |
+ * | Version  | uint32   | 2                                                 |
  * +----------+----------+---------------------------------------------------+
  *
  * [ MATERIALS ]
@@ -42,8 +42,20 @@
  * |  |                  |          |  BoneIdx, BoneWeight]                  |
  * |  +------------------+----------+----------------------------------------+
  * |  | Indices          | (Nested) | uint64 Count + uint32[Count]           |
- * |  | MaterialIndices  | (Nested) | uint64 Count + uint64[Count]           |
+ * |  | SubMeshes        | (Nested) | uint64 Count + SubMesh[Count]          |
  * |  +------------------+----------+----------------------------------------+
+ *
+ * [ SubMesh ]
+ * +----------------+--------+-----------------------------------------------+
+ * | IndexOffset    | uint64 | Start index in the node index buffer          |
+ * | IndexCount     | uint64 | Number of indices to draw                     |
+ * | MaterialIndex  | uint64 | Material reference index                      |
+ * +----------------+--------+-----------------------------------------------+
+ *
+ * [ COMPATIBILITY ]
+ * Version 1 stores a MaterialIndices array instead of SubMeshes. When reading
+ * v1, the first material index is used to create a single SubMesh that spans
+ * the full index buffer.
  */
 #pragma once
 
@@ -76,6 +88,7 @@ namespace asset {
         void ReadModelResult(ModelResult& Result);
         void ReadNodes(ModelResult& Result, std::uint64_t NodeCount, std::vector<ModelNode*>& Nodes);
         void ReadVertexAttributes(VertexAttributes& Attributes);
+        std::vector<ModelNode::SubMesh> ReadSubMeshes();
         std::vector<Vec2> ReadVec2Array();
         std::vector<Vec3> ReadVec3Array();
         std::vector<Vec4> ReadVec4Array();
@@ -100,5 +113,6 @@ namespace asset {
 
     private:
         std::ifstream mStream{};
+        std::uint32_t mFormatVersion{ 0 };
     };
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -37,6 +38,7 @@ namespace asset {
         bool Create(const VertexAttributes& Vertices, std::span<const std::uint32_t> Indices, GLenum Primitive = GL_TRIANGLES);
 
         void Draw() const;
+        void DrawRange(std::size_t IndexOffset, std::size_t IndexCount) const;
 
         GLenum Primitive() const;
 

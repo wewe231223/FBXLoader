@@ -13,6 +13,12 @@ namespace asset {
     class ModelNode final {
     public:
         using Id = std::uint32_t;
+        struct SubMesh final {
+        public:
+            std::size_t IndexOffset{ 0 };
+            std::size_t IndexCount{ 0 };
+            std::size_t MaterialIndex{ 0 };
+        };
 
     public:
         ModelNode(Id IdValue, std::string Name);
@@ -43,9 +49,12 @@ namespace asset {
         std::vector<std::uint32_t>& Indices();
         const std::vector<std::uint32_t>& Indices() const;
 
+        std::vector<SubMesh>& SubMeshes();
+        const std::vector<SubMesh>& SubMeshes() const;
+
         std::vector<const ModelNode*> GetChildChain() const;
-        void SetMaterialIndices(std::vector<std::size_t> Indices);
-        const std::vector<std::size_t>& GetMaterialIndices() const;
+        void SetSubMeshes(std::vector<SubMesh> SubMeshes);
+        const std::vector<SubMesh>& GetSubMeshes() const;
 
     private:
         Id mId{ 0 };
@@ -59,7 +68,7 @@ namespace asset {
 
         VertexAttributes mVertices{};
         std::vector<std::uint32_t> mIndices{};
-        std::vector<std::size_t> mMaterialIndices{};
+        std::vector<SubMesh> mSubMeshes{};
     };
 
     class ModelResult final {

@@ -1,12 +1,12 @@
 /*
  * ============================================================================
- * FBXB BINARY FORMAT (v1) SPECIFICATION
+ * FBXB BINARY FORMAT (v2) SPECIFICATION
  * ============================================================================
  *
  * [ HEADER ]
  * +----------+----------+---------------------------------------------------+
  * | Magic    | char[4]  | "FBXB"                                            |
- * | Version  | uint32   | 1                                                 |
+ * | Version  | uint32   | 2                                                 |
  * +----------+----------+---------------------------------------------------+
  *
  * [ MATERIALS ]
@@ -42,8 +42,15 @@
  * |  |                  |          |  BoneIdx, BoneWeight]                  |
  * |  +------------------+----------+----------------------------------------+
  * |  | Indices          | (Nested) | uint64 Count + uint32[Count]           |
- * |  | MaterialIndices  | (Nested) | uint64 Count + uint64[Count]           |
+ * |  | SubMeshes        | (Nested) | uint64 Count + SubMesh[Count]          |
  * |  +------------------+----------+----------------------------------------+
+ *
+ * [ SubMesh ]
+ * +----------------+--------+-----------------------------------------------+
+ * | IndexOffset    | uint64 | Start index in the node index buffer          |
+ * | IndexCount     | uint64 | Number of indices to draw                     |
+ * | MaterialIndex  | uint64 | Material reference index                      |
+ * +----------------+--------+-----------------------------------------------+
  */
 #pragma once
 
@@ -78,6 +85,7 @@ namespace asset {
         void WriteNodes(const std::vector<const ModelNode*>& Nodes, const std::unordered_map<const ModelNode*, std::uint32_t>& NodeIndices);
         void WriteNode(const ModelNode& Node, const std::unordered_map<const ModelNode*, std::uint32_t>& NodeIndices);
         void WriteVertexAttributes(const VertexAttributes& Attributes);
+        void WriteSubMeshes(const std::vector<ModelNode::SubMesh>& SubMeshes);
         void WriteVec2Array(std::span<const Vec2> Values);
         void WriteVec3Array(std::span<const Vec3> Values);
         void WriteVec4Array(std::span<const Vec4> Values);

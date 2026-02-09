@@ -57,7 +57,6 @@ namespace {
     public:
         asset::Model Model{};
         const asset::ModelNode* Node{ nullptr };
-        std::optional<std::size_t> MaterialIndex{};
     };
 
     std::optional<std::string> FindMaterialTextureName(const asset::Material& MaterialData) {
@@ -270,10 +269,6 @@ namespace {
                 ModelEntry Entry{};
                 Entry.Model = std::move(ModelInstance);
                 Entry.Node = Node;
-                const std::vector<std::size_t>& MaterialIndices{ Node->GetMaterialIndices() };
-                if (!MaterialIndices.empty()) {
-                    Entry.MaterialIndex = MaterialIndices.front();
-                }
                 Models.push_back(std::move(Entry));
             }
             const std::vector<asset::ModelNode*>& Children{ Node->GetChildren() };
@@ -646,23 +641,33 @@ int main(int ArgCount, char** ArgValues) {
             const asset::ModelNode* Node{ Entry.Node };
             const glm::mat4 ModelMatrix{ ComputeWorldMatrix(*Node) };
             LitShader.SetMat4("uModel", ModelMatrix);
-            bool BoundTexture{ false };
-            if (Entry.MaterialIndex.has_value()) {
-                const std::size_t MaterialIndex{ Entry.MaterialIndex.value() };
+            auto BindMaterialTexture = [&](std::size_t MaterialIndex) {
                 if (MaterialIndex < MaterialTextures.size() && MaterialTextures[MaterialIndex].Id() != 0) {
                     MaterialTextures[MaterialIndex].Bind(0);
-                    BoundTexture = true;
+                    return true;
                 }
-            }
-            if (!BoundTexture) {
+                return false;
+            };
+            auto BindFallbackTexture = [&]() {
                 if (HasTexture) {
                     Checker.Bind(0);
                 }
                 else {
                     glBindTexture(GL_TEXTURE_2D, 0);
                 }
+            };
+            const std::vector<asset::ModelNode::SubMesh>& SubMeshes{ Node->GetSubMeshes() };
+            if (SubMeshes.empty()) {
+                BindFallbackTexture();
+                ModelInstance.Draw();
+                continue;
             }
-            ModelInstance.Draw();
+            for (const asset::ModelNode::SubMesh& SubMesh : SubMeshes) {
+                if (!BindMaterialTexture(SubMesh.MaterialIndex)) {
+                    BindFallbackTexture();
+                }
+                ModelInstance.DrawRange(SubMesh.IndexOffset, SubMesh.IndexCount);
+            }
         }
 
         glfwSwapBuffers(Window);

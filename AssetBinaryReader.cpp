@@ -6,7 +6,7 @@
 using namespace asset;
 
 namespace {
-    constexpr std::uint32_t FormatVersion{ 1 };
+    constexpr std::uint32_t FormatVersion{ 2 };
     constexpr std::array<char, 4> FormatMagic{ 'F', 'B', 'X', 'B' };
 }
 
@@ -33,7 +33,11 @@ bool AssetBinaryReader::ReadHeader() {
         return false;
     }
     const std::uint32_t Version{ ReadUint32() };
-    return Version == FormatVersion;
+    if (Version != 1 && Version != FormatVersion) {
+        return false;
+    }
+    mFormatVersion = Version;
+    return true;
 }
 
 void AssetBinaryReader::ReadMaterials(std::vector<Material>& Materials) {
@@ -112,13 +116,25 @@ void AssetBinaryReader::ReadNodes(ModelResult& Result, std::uint64_t NodeCount, 
         Node.SetGeometryToNode(ReadMat4());
         ReadVertexAttributes(Node.Vertices());
         Node.Indices() = ReadUint32Array();
-        const std::vector<std::uint64_t> MaterialIndices{ ReadUint64Array() };
-        std::vector<std::size_t> Converted{};
-        Converted.reserve(MaterialIndices.size());
-        for (std::size_t MaterialIndex{ 0 }; MaterialIndex < MaterialIndices.size(); ++MaterialIndex) {
-            Converted.push_back(static_cast<std::size_t>(MaterialIndices[MaterialIndex]));
+        if (mFormatVersion == 1) {
+            const std::vector<std::uint64_t> MaterialIndices{ ReadUint64Array() };
+            std::size_t MaterialIndex{ 0 };
+            if (!MaterialIndices.empty()) {
+                MaterialIndex = static_cast<std::size_t>(MaterialIndices.front());
+            }
+            if (!Node.Indices().empty()) {
+                std::vector<ModelNode::SubMesh> SubMeshes{};
+                ModelNode::SubMesh SubMesh{};
+                SubMesh.IndexOffset = 0;
+                SubMesh.IndexCount = Node.Indices().size();
+                SubMesh.MaterialIndex = MaterialIndex;
+                SubMeshes.push_back(SubMesh);
+                Node.SetSubMeshes(std::move(SubMeshes));
+            }
         }
-        Node.SetMaterialIndices(std::move(Converted));
+        else {
+            Node.SetSubMeshes(ReadSubMeshes());
+        }
         Nodes.push_back(&Node);
     }
 }
@@ -134,6 +150,20 @@ void AssetBinaryReader::ReadVertexAttributes(VertexAttributes& Attributes) {
     Attributes.Bitangents = ReadVec3Array();
     Attributes.BoneIndices = ReadUvec4Array();
     Attributes.BoneWeights = ReadVec4Array();
+}
+
+std::vector<ModelNode::SubMesh> AssetBinaryReader::ReadSubMeshes() {
+    const std::uint64_t Count{ ReadUint64() };
+    std::vector<ModelNode::SubMesh> SubMeshes{};
+    SubMeshes.reserve(static_cast<std::size_t>(Count));
+    for (std::uint64_t Index{ 0 }; Index < Count; ++Index) {
+        ModelNode::SubMesh SubMesh{};
+        SubMesh.IndexOffset = static_cast<std::size_t>(ReadUint64());
+        SubMesh.IndexCount = static_cast<std::size_t>(ReadUint64());
+        SubMesh.MaterialIndex = static_cast<std::size_t>(ReadUint64());
+        SubMeshes.push_back(SubMesh);
+    }
+    return SubMeshes;
 }
 
 std::vector<Vec2> AssetBinaryReader::ReadVec2Array() {
